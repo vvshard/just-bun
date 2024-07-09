@@ -1,0 +1,10 @@
+{
+  "name": "jb_global",
+  "type": "module",
+  "dependencies": {
+    "just_bun-asm": "file:../just_bun-asm"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

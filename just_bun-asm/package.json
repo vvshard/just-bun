@@ -1,0 +1,13 @@
+{
+  "name": "just_bun-asm",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
