@@ -1,4 +1,10 @@
 
+export function decode_uXXXX(/**@type {string}*/ str){
+    const ru = /\\u[0-9a-fA-F]{4}/;
+    const re = /("|\\(?!u[0-9a-fA-F]{4}))/g;
+    return str.split('\n').map(s => !ru.test(s) ? s
+        : JSON.parse(`"${s.replace(re, '\\$&')}"`)).join('\n');
+}
 
 //-////////////////////////////////////////////////
 //----//////--  decorated $`...` --//////----//////
@@ -13,3 +19,5 @@ export function p$(/**@type {TemplateStringsArray}*/ strings, ...expressions) {
     ) + strings.raw[i + 1], 'BunSell_$ ' + strings.raw[0]));
     return $(strings, ...expressions);
 }
+
+
