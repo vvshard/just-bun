@@ -12,8 +12,8 @@ import { p$, decode_uXXXX } from './funcs.js' // global / dbg
 
 //----//////----//////----//////----//////----//////----//////----//////
 
-const main = '../tests/index.ts';
-const outdir = '../tests/out';
+const main = __dirname + '/../tests/index.ts';
+const outdir = __dirname + '../tests/out';
 
 export async function runRecipe(recipeName, /**@type {string[]}*/ args = []) {
     switch (recipeName) {

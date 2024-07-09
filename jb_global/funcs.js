@@ -1,3 +1,4 @@
+import { $ } from 'bun'
 
 export function decode_uXXXX(/**@type {string}*/ str){
     const ru = /\\u[0-9a-fA-F]{4}/;
