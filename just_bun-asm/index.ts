@@ -47,6 +47,11 @@ export async function start(args: string[]) {
     await runRecipe(args.shift(), args);
 }
 
+function printHelp() {
+    console.log('Help3');
+
+}
+
 function findPath(file = 'just_bun.js', txt?: string[]): string {
     let currentPath = '.';
     let parentPath = process.cwd();
@@ -61,10 +66,6 @@ function findPath(file = 'just_bun.js', txt?: string[]): string {
     return 'Not found ↑';
 }
 
-function printHelp() {
-    console.log('Help3');
-
-}
 
 async function installTypes() {
     const jb_path = findPath();
@@ -99,10 +100,6 @@ async function installTypes() {
     }
 }
 
-function parseRecipes(arg0: string): string {
-    throw new Error("Function parseRecipes() not implemented.");
-}
-
 async function mainupdate() {
     const mainTs = jb_global + "/mainupdate/main.ts";
     if (Bun.file(mainTs).size === 0)
@@ -112,3 +109,8 @@ bun i
 bun build ./main.ts --outdir ../ --target bun`
         .cwd(jb_global + "/mainupdate");
 }
+
+function parseRecipes(arg0: string): string {
+    throw new Error("Function parseRecipes() not implemented.");
+}
+

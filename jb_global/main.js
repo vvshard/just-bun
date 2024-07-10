@@ -57,22 +57,25 @@ async function installTypes() {
   if (jb_path === "Not found \u2191")
     return console.log("Not found \u2191 just_bun.js");
   let exist_gitignore = false;
-  const gitignore_path = findPath(".gitignore");
-  if (gitignore_path !== "Not found \u2191") {
-    const file = Bun.file(gitignore_path + "/.gitignore");
-    let gitignore_text = await file.text();
-    if (gitignore_text.startsWith("node_modules/") || /\nnode_modules\//.test(gitignore_text)) {
-      exist_gitignore = true;
-    } else if (jb_path === ".") {
-      await Bun.write(file, gitignore_text + "\nnode_modules/");
-      exist_gitignore = true;
-    }
-  }
   process.chdir(jb_path);
   if (Bun.file("./package.json").size === 0) {
     await $`bun add @types/bun --no-save; rm package.json`;
   } else {
+    exist_gitignore = true;
     await $`bun add @types/bun -d`;
+  }
+  if (!exist_gitignore) {
+    const gitignore_path = findPath(".gitignore");
+    if (gitignore_path !== "Not found \u2191") {
+      const file = Bun.file(gitignore_path + "/.gitignore");
+      let gitignore_text = await file.text();
+      if (gitignore_text.startsWith("node_modules/") || /\nnode_modules\//.test(gitignore_text)) {
+        exist_gitignore = true;
+      } else if (jb_path === ".") {
+        await Bun.write(file, gitignore_text + "\nnode_modules/");
+        exist_gitignore = true;
+      }
+    }
   }
   if (!exist_gitignore) {
     await Bun.write("./.gitignore", "node_modules/");

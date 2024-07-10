@@ -8,9 +8,24 @@ fn main() {
         .to_str()
         .expect("The exe file name is not Unicode")
         .to_string();
+    let path_exe = path.to_str().expect("The exe file path is not Unicode").to_string();
     path.pop();
     path.pop();
-    path.push(&(file_stem + "_global/main.js"));
+    path.push(&(file_stem + "_global"));
+    path.push("main.js");
 
-    Command::new("bun").arg(path).args(env::args().skip(1)).status().expect("Failed to start bun");
+    let mut args = env::args();
+    match args.nth(1) {
+        None => Command::new("bun").arg(path).status(),
+        Some(arg) => {
+            if arg == "--help" {
+                println!(
+                    "Run {path_exe}:\n this in turn is only run:$ bun \"{}\" [...args]",
+                    path.to_str().unwrap()
+                );
+            }
+            Command::new("bun").arg(path).arg(arg).args(args).status()
+        }
+    }
+    .expect("Failed to start bun");
 }
