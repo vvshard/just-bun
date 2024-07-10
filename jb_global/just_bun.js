@@ -7,8 +7,8 @@
 import { $ } from 'bun';
 import path from 'path';
 
-import { p$, decode_uXXXX } from './funcs.js' // global / dbg 
-// const { p$, decode_uXXXX } = await import(Bun.main.slice(0, -7) + funcs.js); // local
+import { p$, decode_uXXXX } from './jb_funcs.js' // global / dbg 
+// const { p$, decode_uXXXX } = await import(Bun.main.slice(0, -7) + 'jb_funcs.js'); // local
 
 //----//////----//////----//////----//////----//////----//////----//////
 
