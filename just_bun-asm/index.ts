@@ -1,4 +1,7 @@
 import path from "path";
+import { $ } from "bun";
+
+const jb_global = path.dirname(Bun.main);
 
 export async function start(args: string[]) {
     // console.log(`args: ${args}`);
@@ -11,10 +14,12 @@ export async function start(args: string[]) {
             return printHelp();
         case '-@':
             return installTypes();
+        case '-u':
+            return mainupdate();
         case '-p':
             return console.log(`Path to just_bun.js: ${findPath()}/`);
         case '-pg':
-            return console.log(`Path to global just_bun.js: ${path.dirname(Bun.main)}/`);
+            return console.log(`Path to global just_bun.js: ${jb_global}/`);
         case '-lg':
             isGlob = true;
         case '-l':
@@ -24,12 +29,13 @@ export async function start(args: string[]) {
             isGlob = true;
     }
 
-    let runnerPath = (isGlob ? path.dirname(Bun.main) : findPath()) + '/just_bun.js';
+    let runnerPath = (isGlob ? jb_global : findPath()) + '/just_bun.js';
+    if (runnerPath === 'Not found ↑/just_bun.js') return console.log(runnerPath);
 
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
         = await import(runnerPath);
 
-    if (!runRecipe) throw new Error(`${runnerPath} does not contain function runRecipe()`);
+    if (!runRecipe) return console.log(`${runnerPath} does not contain function runRecipe()`);
 
     if (displayList) return console.log(parseRecipes(runRecipe.toString()));
 
@@ -44,24 +50,33 @@ function findPath(): string {
     let parentPath = process.cwd();
 
     do {
-        if (Bun.file(parentPath + '/just_bun.js').size != 0)
+        if (Bun.file(parentPath + '/just_bun.js').size !== 0)
             return currentPath === '.' ? '.' : parentPath;
         currentPath = parentPath;
         parentPath = path.dirname(currentPath);
     } while (parentPath != currentPath);
 
-    throw new Error("Non-empty file just_bun.js not found");
+    return 'Not found ↑';
 }
 
 function printHelp() {
-    throw new Error("Function logHelp() not implemented.");
+    console.log('Help3');
+
 }
 
 function installTypes() {
-    throw new Error("Function not implemented.");
+    throw new Error("Function installTypes() not implemented.");
 }
 
 function parseRecipes(arg0: string): string {
-    throw new Error("Function not implemented.");
+    throw new Error("Function parseRecipes() not implemented.");
 }
 
+async function mainupdate() {
+    const mainTs = jb_global + "/mainupdate/main.ts";
+    if (Bun.file(mainTs).size === 0) return console.log("Not found " + mainTs);
+    await $`
+bun i
+bun build ./main.ts --outdir ../ --target bun`
+        .cwd(jb_global + "/mainupdate");
+}

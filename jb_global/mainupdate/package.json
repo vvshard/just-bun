@@ -1,8 +1,6 @@
 {
-  "name": "jb_global",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest",
-    "just_bun-asm": "file:../just_bun-asm"
+    "@types/bun": "latest"
   }
 }
