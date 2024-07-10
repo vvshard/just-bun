@@ -35,9 +35,11 @@ export async function start(args: string[]) {
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
         = await import(runnerPath);
 
-    if (!runRecipe) return console.log(`${runnerPath} does not contain function runRecipe()`);
+    if (!runRecipe)
+        return console.log(`${runnerPath} does not contain function runRecipe()`);
 
-    if (displayList) return console.log(parseRecipes(runRecipe.toString()));
+    if (displayList)
+        return console.log(parseRecipes(runRecipe.toString()));
 
     if (isGlob) {
         args.shift();
@@ -45,12 +47,12 @@ export async function start(args: string[]) {
     await runRecipe(args.shift(), args);
 }
 
-function findPath(): string {
+function findPath(file = 'just_bun.js', txt?: string[]): string {
     let currentPath = '.';
     let parentPath = process.cwd();
 
     do {
-        if (Bun.file(parentPath + '/just_bun.js').size !== 0)
+        if (Bun.file(`${parentPath}/${file}`).size !== 0)
             return currentPath === '.' ? '.' : parentPath;
         currentPath = parentPath;
         parentPath = path.dirname(currentPath);
@@ -64,8 +66,37 @@ function printHelp() {
 
 }
 
-function installTypes() {
-    throw new Error("Function installTypes() not implemented.");
+async function installTypes() {
+    const jb_path = findPath();
+    if (jb_path === 'Not found ↑')
+        return console.log('Not found ↑ just_bun.js');
+    let exist_gitignore = false;
+
+    process.chdir(jb_path);
+    if (Bun.file('./package.json').size === 0) {
+        await $`bun add @types/bun --no-save; rm package.json`
+    } else {
+        exist_gitignore = true;
+        await $`bun add @types/bun -d`
+    }
+
+    if (!exist_gitignore) {
+        const gitignore_path = findPath('.gitignore');
+        if (gitignore_path !== 'Not found ↑') {
+            const file = Bun.file(gitignore_path + '/.gitignore');
+            let gitignore_text = await file.text();
+            if (gitignore_text.startsWith('node_modules/')
+                || /\nnode_modules\//.test(gitignore_text)) {
+                exist_gitignore = true;
+            } else if (jb_path === '.') {
+                await Bun.write(file, gitignore_text + '\nnode_modules/');
+                exist_gitignore = true;
+            }
+        }
+    }
+    if (!exist_gitignore) {
+        await Bun.write('./.gitignore', 'node_modules/');
+    }
 }
 
 function parseRecipes(arg0: string): string {
@@ -74,7 +105,8 @@ function parseRecipes(arg0: string): string {
 
 async function mainupdate() {
     const mainTs = jb_global + "/mainupdate/main.ts";
-    if (Bun.file(mainTs).size === 0) return console.log("Not found " + mainTs);
+    if (Bun.file(mainTs).size === 0)
+        return console.log("Not found " + mainTs);
     await $`
 bun i
 bun build ./main.ts --outdir ../ --target bun`

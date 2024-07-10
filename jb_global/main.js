@@ -38,11 +38,11 @@ async function start(args) {
   }
   await runRecipe(args.shift(), args);
 }
-var findPath = function() {
+var findPath = function(file = "just_bun.js", txt) {
   let currentPath = ".";
   let parentPath = process.cwd();
   do {
-    if (Bun.file(parentPath + "/just_bun.js").size !== 0)
+    if (Bun.file(`${parentPath}/${file}`).size !== 0)
       return currentPath === "." ? "." : parentPath;
     currentPath = parentPath;
     parentPath = path.dirname(currentPath);
@@ -52,9 +52,32 @@ var findPath = function() {
 var printHelp = function() {
   console.log("Help3");
 };
-var installTypes = function() {
-  throw new Error("Function installTypes() not implemented.");
-};
+async function installTypes() {
+  const jb_path = findPath();
+  if (jb_path === "Not found \u2191")
+    return console.log("Not found \u2191 just_bun.js");
+  let exist_gitignore = false;
+  const gitignore_path = findPath(".gitignore");
+  if (gitignore_path !== "Not found \u2191") {
+    const file = Bun.file(gitignore_path + "/.gitignore");
+    let gitignore_text = await file.text();
+    if (gitignore_text.startsWith("node_modules/") || /\nnode_modules\//.test(gitignore_text)) {
+      exist_gitignore = true;
+    } else if (jb_path === ".") {
+      await Bun.write(file, gitignore_text + "\nnode_modules/");
+      exist_gitignore = true;
+    }
+  }
+  process.chdir(jb_path);
+  if (Bun.file("./package.json").size === 0) {
+    await $`bun add @types/bun --no-save; rm package.json`;
+  } else {
+    await $`bun add @types/bun -d`;
+  }
+  if (!exist_gitignore) {
+    await Bun.write("./.gitignore", "node_modules/");
+  }
+}
 var parseRecipes = function(arg0) {
   throw new Error("Function parseRecipes() not implemented.");
 };
@@ -64,9 +87,7 @@ async function mainupdate() {
     return console.log("Not found " + mainTs);
   await $`
 bun i
-bun build ./main.ts --outdir ../ --target bun
-echo Ok
-`.cwd(jb_global + "/mainupdate");
+bun build ./main.ts --outdir ../ --target bun`.cwd(jb_global + "/mainupdate");
 }
 var jb_global = path.dirname(Bun.main);
 
