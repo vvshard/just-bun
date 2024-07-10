@@ -5,6 +5,7 @@ var {$ } = globalThis.Bun;
 async function start(args) {
   let isGlob = false;
   let displayList = false;
+  let openInVsCode = false;
   switch (args[0]) {
     case "--help":
     case "-h":
@@ -17,6 +18,11 @@ async function start(args) {
       return console.log(`Path to just_bun.js: ${findPath()}/`);
     case "-pg":
       return console.log(`Path to global just_bun.js: ${jb_global}/`);
+    case "-cg":
+      isGlob = true;
+    case "-c":
+      openInVsCode = true;
+      break;
     case "-lg":
       isGlob = true;
     case "-l":
@@ -28,6 +34,13 @@ async function start(args) {
   let runnerPath = (isGlob ? jb_global : findPath()) + "/just_bun.js";
   if (runnerPath === "Not found \u2191/just_bun.js")
     return console.log(runnerPath);
+  if (openInVsCode) {
+    const { stderr, exitCode } = await $`code --goto ${runnerPath}`.nothrow();
+    if (exitCode !== 0) {
+      console.log(`Error opening "just_bun.js" in VS Code:\n   ${stderr}`);
+    }
+    return;
+  }
   const { runRecipe } = await import(runnerPath);
   if (!runRecipe)
     return console.log(`${runnerPath} does not contain function runRecipe()`);
@@ -38,6 +51,9 @@ async function start(args) {
   }
   await runRecipe(args.shift(), args);
 }
+var printHelp = function() {
+  console.log("Help3");
+};
 var findPath = function(file = "just_bun.js", txt) {
   let currentPath = ".";
   let parentPath = process.cwd();
@@ -48,9 +64,6 @@ var findPath = function(file = "just_bun.js", txt) {
     parentPath = path.dirname(currentPath);
   } while (parentPath != currentPath);
   return "Not found \u2191";
-};
-var printHelp = function() {
-  console.log("Help3");
 };
 async function installTypes() {
   const jb_path = findPath();
@@ -81,9 +94,6 @@ async function installTypes() {
     await Bun.write("./.gitignore", "node_modules/");
   }
 }
-var parseRecipes = function(arg0) {
-  throw new Error("Function parseRecipes() not implemented.");
-};
 async function mainupdate() {
   const mainTs = jb_global + "/mainupdate/main.ts";
   if (Bun.file(mainTs).size === 0)
@@ -92,6 +102,9 @@ async function mainupdate() {
 bun i
 bun build ./main.ts --outdir ../ --target bun`.cwd(jb_global + "/mainupdate");
 }
+var parseRecipes = function(arg0) {
+  throw new Error("Function parseRecipes() not implemented.");
+};
 var jb_global = path.dirname(Bun.main);
 
 // main.ts

@@ -7,6 +7,7 @@ export async function start(args: string[]) {
     // console.log(`args: ${args}`);
     let isGlob = false;
     let displayList = false;
+    let openInVsCode = false;
 
     switch (args[0]) {
         case '--help':
@@ -20,6 +21,11 @@ export async function start(args: string[]) {
             return console.log(`Path to just_bun.js: ${findPath()}/`);
         case '-pg':
             return console.log(`Path to global just_bun.js: ${jb_global}/`);
+        case '-cg':
+            isGlob = true;
+        case '-c':
+            openInVsCode = true;
+            break;
         case '-lg':
             isGlob = true;
         case '-l':
@@ -31,6 +37,14 @@ export async function start(args: string[]) {
 
     let runnerPath = (isGlob ? jb_global : findPath()) + '/just_bun.js';
     if (runnerPath === 'Not found ↑/just_bun.js') return console.log(runnerPath);
+
+    if (openInVsCode) {
+        const { stderr, exitCode } = await $`code --goto ${runnerPath}`.nothrow();
+        if (exitCode !== 0) {
+            console.log(`Error opening "just_bun.js" in VS Code:\n   ${stderr}`);
+        }
+        return;
+    }
 
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
         = await import(runnerPath);
@@ -65,7 +79,6 @@ function findPath(file = 'just_bun.js', txt?: string[]): string {
 
     return 'Not found ↑';
 }
-
 
 async function installTypes() {
     const jb_path = findPath();
