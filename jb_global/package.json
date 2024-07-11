@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "editor": {
+    "fileOpen": "code --goto %file%"
+  }
+}
