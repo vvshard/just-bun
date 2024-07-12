@@ -17,6 +17,6 @@ export function p$(/**@type {TemplateStringsArray}*/ strings, ...expressions) {
             : typeof exp === 'number' ? exp.toString()
                 : exp && 'raw' in exp ? exp.raw
                     : `{${exp}}`
-    ) + strings.raw[i + 1], '◇ BunSell:$ ' + strings.raw[0]));
+    ) + strings[i + 1], '◇ $ ' + strings[0]));
     return $(strings, ...expressions);
 }

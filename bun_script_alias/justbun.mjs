@@ -1,8 +1,8 @@
 // A collection of BunSell recipes run by the command `$ jb <recipe> [...args]`
 // BunSell: https://bun.sh/docs/runtime/shell
 
-// import { p$ } from './funcs.js' // global / dbg 
-const { p$ } = await import(Bun.main.slice(0, -7) + 'funcs.js'); // local
+// import { p$ } from './funcs.mjs' // global / dbg 
+const { p$ } = await import(Bun.main.slice(0, -7) + 'funcs.mjs'); // local
 
 //----//////----//////----//////----//////----//////----//////----//////
 

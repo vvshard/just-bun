@@ -21,9 +21,9 @@ export async function start(args: string[]) {
         case '-u':
             return mainupdate();
         case '-pg':
-            return cl(`Path to global just_bun.js: ${jb_global}/`);
+            return cl(`Path to global justbun.mjs: ${jb_global}/`);
         case '-p':
-            return cl(`Path to just_bun.js: ${findPath()}/`);
+            return cl(`Path to justbun.mjs: ${findPath()}/`);
         case '-og':
             return openInEditor(jb_global);
         case '-o':
@@ -38,13 +38,13 @@ export async function start(args: string[]) {
     }
 
     let runnerPath = (isGlob ? jb_global : findPath());
-    if (runnerPath === 'Not found ↑') return clErr(`${runnerPath} just_bun.js`);
+    if (runnerPath === 'Not found ↑') return clErr(`${runnerPath} justbun.mjs`);
 
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
-        = await import((runnerPath === '.' ? cwd : runnerPath) + '/just_bun.js');
+        = await import((runnerPath === '.' ? cwd : runnerPath) + '/justbun.mjs');
 
     if (!runRecipe)
-        return clErr(`${runnerPath}/just_bun.js does not contain function runRecipe()`);
+        return clErr(`${runnerPath}/justbun.mjs does not contain function runRecipe()`);
 
     if (displayList)
         return cl(parseRecipes(runRecipe.toString()));
@@ -60,7 +60,7 @@ function printHelp() {
 
 }
 
-function findPath(file = 'just_bun.js'): string {
+function findPath(file = 'justbun.mjs'): string {
     let currentPath = '.';
     let parentPath = cwd;
 
@@ -77,7 +77,7 @@ function findPath(file = 'just_bun.js'): string {
 async function installTypes() {
     const jb_path = findPath();
     if (jb_path === 'Not found ↑')
-        return clErr('Not found ↑ just_bun.js');
+        return clErr('Not found ↑ justbun.mjs');
     let exist_gitignore = false;
 
     process.chdir(jb_path);
@@ -122,8 +122,8 @@ function parseRecipes(sfun: string): string {
 }
 
 async function jb_from_template(tmplName?: string) {
-    if (Bun.file('just_bun.js').size !== 0) {
-        cl('There is already a file just_bun.js in the current directory');
+    if (Bun.file('justbun.mjs').size !== 0) {
+        cl('There is already a file justbun.mjs in the current directory');
         openInEditor('.');
     } else {
         let t = await $`ls ${tmplName}*.js`.cwd(jb_global + '/templates').nothrow().text();
@@ -132,14 +132,14 @@ async function jb_from_template(tmplName?: string) {
             return clErr(`A file matching the pattern "${tmplName}*.js"
                 was not found in ${jb_global}/templates`);
 
-        await Bun.write('./just_bun.js', Bun.file(`${jb_global}/templates/${t}`));
+        await Bun.write('./justbun.mjs', Bun.file(`${jb_global}/templates/${t}`));
         await openInEditor('.');
     }
 }
 
 async function openInEditor(path: string) {
     if (path === 'Not found ↑')
-        return clErr('Not found just_bun.js');
+        return clErr('Not found justbun.mjs');
 
     const config = await Bun.file(jb_global + '/package.json').json();
     const openCommand: string | undefined = config.editor?.fileOpen;
@@ -147,10 +147,10 @@ async function openInEditor(path: string) {
         return clErr(`In ${jb_global}/package.json not specified editor.fileOpen`);
 
     const { stderr, exitCode } = path === '.'
-        ? await $`${{ raw: openCommand.replace('%file%', './just_bun.js') }}`.nothrow()
-        : await $`${{ raw: openCommand.replace('%file%', './just_bun.js') }}`.nothrow().cwd(path);
+        ? await $`${{ raw: openCommand.replace('%file%', './justbun.mjs') }}`.nothrow()
+        : await $`${{ raw: openCommand.replace('%file%', './justbun.mjs') }}`.nothrow().cwd(path);
     if (exitCode !== 0) {
-        clErr(`Error opening "just_bun.js":\n   ${stderr}`);
+        clErr(`Error opening "justbun.mjs":\n   ${stderr}`);
     }
 }
 
