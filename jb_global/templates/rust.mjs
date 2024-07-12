@@ -6,23 +6,20 @@ const { p$ } = await import(Bun.main.slice(0, -7) + 'funcs.mjs'); // local
 
 //----//////----//////----//////----//////----//////----//////----//////
 
-export async function runRecipe(recipeName, args = []) {
+export async function runRecipe(recipeName, /**@type {string[]}*/ args = []) {
     switch (recipeName) {
         case 'run':
         case 'r':
         case undefined: // default
-            await p$`cargo run`;
-            return;
+            return await p$`cargo run`;
 
         case 'build_release':
         case 'b':
-            await p$`cargo build --release`;
-            return;
+            return await p$`cargo build --release`;
 
         case 'test':
         case 't':
-             await p$`cargo test`;
-             break;
+            return await p$`cargo test`;
 
         default:
             return console.log(`recipeName error: '${recipeName}'`);

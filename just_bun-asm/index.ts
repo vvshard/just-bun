@@ -52,7 +52,7 @@ export async function start(args: string[]) {
     if (isGlob) {
         args.shift();
     }
-    await runRecipe(args.shift(), args);
+    runRecipe(args.shift(), args);
 }
 
 function printHelp() {
@@ -121,12 +121,12 @@ function parseRecipes(sfun: string): string {
     return sfun;
 }
 
-async function jb_from_template(tmplName?: string) {
+async function jb_from_template(tmplName = '_') {
     if (Bun.file('justbun.mjs').size !== 0) {
         cl('There is already a file justbun.mjs in the current directory');
         openInEditor('.');
     } else {
-        let t = await $`ls ${tmplName}*.js`.cwd(jb_global + '/templates').nothrow().text();
+        let t = await $`ls ${tmplName}*.mjs`.cwd(jb_global + '/templates').nothrow().text();
         t = t.split(/[\n\r]/)[0].trim();
         if (!t)
             return clErr(`A file matching the pattern "${tmplName}*.js"
