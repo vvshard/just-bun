@@ -1,14 +1,13 @@
 // A collection of BunSell recipes run by the command `$ jb <recipe> [...args]`
-// bun: https://bun.sh/, BunSell: https://bun.sh/docs/runtime/shell
-// To use Bun-API autocompletion (including node-API) in the IDE, 
-//      you can install/refresh ./node_modules/@types: `$ jb -@`
+// BunSell: https://bun.sh/docs/runtime/shell
 
 
 import { $ } from 'bun';
 import path from 'path';
 
-import { p$, decode_uXXXX } from './funcs.mjs' // global / dbg 
-// const { p$, decode_uXXXX } = await import(Bun.main.slice(0, -7) + 'funcs.mjs'); // local
+/** @type {{ p$: typeof $, cl: {nrm, err}}} */
+const { p$, cl, decode_uXXXX } = await import(Bun.main.slice(0, -7) + 'funcs.mjs'); // local
+// import { p$, cl, decode_uXXXX } from './funcs.mjs' // global / dbg 
 
 //----//////----//////----//////----//////----//////----//////----//////
 
@@ -20,26 +19,30 @@ export async function runRecipe(recipeName, /**@type {string[]}*/ args = []) {
         case 'run':
         case 'r':
         case undefined: // default
-            return p$`bun ${main}`;
-
+            return await p$`
+    bun ${main}
+    `;
         case 'build':
         case 'b':
-            return p$`bun build ${main} --outdir ${outdir}`;
-
+            return await p$`
+    bun build ${main} --outdir ${outdir}
+    `;
         case 'buildU': // decode \uXXXX
         case 'u':
             return buildAndDecode_uXXXX();
 
         case 'buildW':
         case 'w':
-            return p$`bun --watch build ${main} --outdir ${outdir}`;
-
+            return await p$`
+    bun --watch build ${main} --outdir ${outdir}
+    `;
         case 'buildTB': // target bun
         case 'tb':
-            return p$`bun build ${main} --outdir ${outdir} --target bun`;
-
+            return await p$`
+    bun build ${main} --outdir ${outdir} --target bun
+    `;
         default:
-            return console.log(`recipeName error: '${recipeName}'`);
+            return cl.err(`recipeName error: '${recipeName}'`);
     }
 }
 
