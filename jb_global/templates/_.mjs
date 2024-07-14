@@ -13,8 +13,7 @@ const jb_global = path.dirname(Bun.main);
 export async function runRecipe(recipeName, args = []) {
     switch (recipeName) {
         case undefined: // default
-        // process.chdir('C:/Users/vvsh/AppData/Local/Programs/Notepad2e');
-        await  $`C:/Users/vvsh/code/Rust/projects/my/snake/target/release/snake.exe`.nothrow();
+        
             return;
 
         default:

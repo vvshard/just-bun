@@ -1,4 +1,4 @@
-/** Global functions for +justbun.mjs files 
+/** Global functions for just_bun.mjs files 
  * @module funcs  
 */
 

@@ -62,9 +62,9 @@ async function start(args) {
     case "-u":
       return mainupdate();
     case "-pg":
-      return csl(`Path to global +justbun.mjs: ${jb_global}/`);
+      return csl(`Path to global just_bun.mjs: ${jb_global}/`);
     case "-p":
-      return csl(`Path to +justbun.mjs: ${findPath()}/`);
+      return csl(`Path to just_bun.mjs: ${findPath()}/`);
     case "-og":
       return openInEditor(jb_global);
     case "-o":
@@ -79,12 +79,12 @@ async function start(args) {
   }
   let runnerPath = isGlob ? jb_global : findPath();
   if (runnerPath === "Not found \u2191")
-    return err(`${runnerPath} +justbun.mjs`);
-  const { runRecipe } = await import((runnerPath === "." ? cwd : runnerPath) + "/+justbun.mjs");
+    return err(`${runnerPath} just_bun.mjs`);
+  const { runRecipe } = await import((runnerPath === "." ? cwd : runnerPath) + "/just_bun.mjs");
   if (!runRecipe)
-    return err(`${runnerPath}/+justbun.mjs does not contain function runRecipe()`);
+    return err(`${runnerPath}/just_bun.mjs does not contain function runRecipe()`);
   if (displayList)
-    return csl(`List of recipes in ${runnerPath}/+justbun.mjs: \n${parseRecipes(runRecipe.toString())}`);
+    return csl(`List of recipes in ${runnerPath}/just_bun.mjs: \n${parseRecipes(runRecipe.toString())}`);
   if (isGlob) {
     args.shift();
   }
@@ -93,7 +93,7 @@ async function start(args) {
 var printHelp = function() {
   csl("Help3");
 };
-var findPath = function(file = "+justbun.mjs") {
+var findPath = function(file = "just_bun.mjs") {
   let currentPath = ".";
   let parentPath = cwd;
   do {
@@ -107,7 +107,7 @@ var findPath = function(file = "+justbun.mjs") {
 async function installTypes() {
   const jb_path = findPath();
   if (jb_path === "Not found \u2191")
-    return err("Not found \u2191 +justbun.mjs");
+    return err("Not found \u2191 just_bun.mjs");
   let exist_gitignore = false;
   process.chdir(jb_path);
   if (Bun.file("./package.json").size === 0) {
@@ -143,8 +143,8 @@ bun build ./main.ts --outdir ../ --target bun
 `.cwd(jb_global + "/mainupdate");
 }
 async function jb_from_template(tmplName = "_") {
-  if (Bun.file("+justbun.mjs").size !== 0) {
-    err("There is already a file +justbun.mjs in the current directory");
+  if (Bun.file("just_bun.mjs").size !== 0) {
+    err("There is already a file just_bun.mjs in the current directory");
     openInEditor(".");
   } else {
     let t = await $`
@@ -156,20 +156,20 @@ async function jb_from_template(tmplName = "_") {
                 was not found in ${jb_global}/templates`);
     let text = await Bun.file(`${jb_global}/templates/${t}`).text();
     text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/, JSON.stringify(jb_global + "/funcs.mjs") + ";");
-    await Bun.write("./+justbun.mjs", text);
+    await Bun.write("./just_bun.mjs", text);
     await openInEditor(".");
   }
 }
 async function openInEditor(path2) {
   if (path2 === "Not found \u2191")
-    return err("Not found +justbun.mjs");
+    return err("Not found just_bun.mjs");
   const config = await Bun.file(jb_global + "/package.json").json();
   const openCommand = config.editor?.fileOpen;
   if (!openCommand)
     return err(`In ${jb_global}/package.json not specified editor.fileOpen`);
-  const { stderr, exitCode } = path2 === "." ? await $`${{ raw: openCommand.replace("%file%", "./+justbun.mjs") }}`.nothrow() : await $`${{ raw: openCommand.replace("%file%", "./+justbun.mjs") }}`.nothrow().cwd(path2);
+  const { stderr, exitCode } = path2 === "." ? await $`${{ raw: openCommand.replace("%file%", "./just_bun.mjs") }}`.nothrow() : await $`${{ raw: openCommand.replace("%file%", "./just_bun.mjs") }}`.nothrow().cwd(path2);
   if (exitCode !== 0) {
-    err(`Error opening "+justbun.mjs":\n   ${stderr}`);
+    err(`Error opening "just_bun.mjs":\n   ${stderr}`);
   }
 }
 var cwd = process.cwd();
