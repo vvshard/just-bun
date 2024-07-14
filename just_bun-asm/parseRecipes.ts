@@ -43,5 +43,5 @@ export function parseRecipes(sfun: string): string {
         stateF(a);
     }
 
-    return list;
+    return list.trim();
 }

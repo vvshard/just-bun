@@ -44,13 +44,14 @@ function parseRecipes(sfun) {
     let a = arr[0].split(/ ["\(]|[\);: "]/);
     stateF(a);
   }
-  return list;
+  return list.trim();
 }
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
 async function start(args) {
   let isGlob = false;
-  let displayList = false;
+  let displayList = "none";
+  let runnerPath = "";
   switch (args[0]) {
     case "--help":
     case "-h":
@@ -61,33 +62,49 @@ async function start(args) {
       return installTypes();
     case "-u":
       return mainupdate();
-    case "-pg":
+    case "-P":
       return csl(`Path to global just_bun.mjs: ${jb_global}/`);
     case "-p":
       return csl(`Path to just_bun.mjs: ${findPath()}/`);
-    case "-og":
+    case "-O":
       return openInEditor(jb_global);
     case "-o":
       return openInEditor(findPath());
-    case "-lg":
+    case "-L":
       isGlob = true;
     case "-l":
-      displayList = true;
+      displayList = "show";
+      break;
+    case "-N":
+      isGlob = true;
+    case "-n":
+      displayList = "select";
+      break;
+    case "-f":
+      args.shift();
+      runnerPath = args.shift() ?? "";
+      if (!runnerPath)
+        return err("File path not passed");
+      if (Bun.file(runnerPath).size === 0 || !runnerPath.endsWith("js"))
+        return err("Incorrect file path");
       break;
     case "-g":
+      args.shift();
       isGlob = true;
   }
-  let runnerPath = isGlob ? jb_global : findPath();
-  if (runnerPath === "Not found \u2191")
-    return err(`${runnerPath} just_bun.mjs`);
-  const { runRecipe } = await import((runnerPath === "." ? cwd : runnerPath) + "/just_bun.mjs");
-  if (!runRecipe)
-    return err(`${runnerPath}/just_bun.mjs does not contain function runRecipe()`);
-  if (displayList)
-    return csl(`List of recipes in ${runnerPath}/just_bun.mjs: \n${parseRecipes(runRecipe.toString())}`);
-  if (isGlob) {
-    args.shift();
+  if (!runnerPath) {
+    runnerPath = isGlob ? jb_global : findPath();
+    if (runnerPath === "Not found \u2191")
+      return err("Not found \u2191 just_bun.mjs");
+    runnerPath += "/just_bun.mjs";
   }
+  const { runRecipe } = await import(path.resolve(runnerPath));
+  if (!runRecipe)
+    return err(`${runnerPath} does not contain function runRecipe()`);
+  if (displayList === "show")
+    return csl(`List of recipes in ${runnerPath}: \n${parseRecipes(runRecipe.toString())}`);
+  if (displayList === "select")
+    return runByNumber(runRecipe);
   runRecipe(args.shift(), args);
 }
 var printHelp = function() {
@@ -170,6 +187,28 @@ async function openInEditor(path2) {
   const { stderr, exitCode } = path2 === "." ? await $`${{ raw: openCommand.replace("%file%", "./just_bun.mjs") }}`.nothrow() : await $`${{ raw: openCommand.replace("%file%", "./just_bun.mjs") }}`.nothrow().cwd(path2);
   if (exitCode !== 0) {
     err(`Error opening "just_bun.mjs":\n   ${stderr}`);
+  }
+}
+async function runByNumber(runRecipe) {
+  const listR = parseRecipes(runRecipe.toString()).split("\n");
+  csl("Enter the recipe number and, if necessary, arguments:");
+  console.log(listR.map((s, i) => `${i + 1}. ${s}`).join("\n"));
+  for await (const line of console) {
+    const args = line.split(" ");
+    const n = Math.floor(Number(args.shift()));
+    if (isNaN(n)) {
+      console.write("Enter the recipe NUMBER\n");
+    } else if (n < 1 || n > listR.length) {
+      console.write("Number outside the list\n");
+    } else {
+      let recipeName = listR[n - 1].split("/")[0].trim();
+      if (recipeName === "<default>") {
+        runRecipe(undefined);
+      } else {
+        runRecipe(recipeName, args);
+      }
+      return;
+    }
   }
 }
 var cwd = process.cwd();
