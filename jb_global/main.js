@@ -2,6 +2,52 @@
 // ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
 import path from "path";
 var {$ } = globalThis.Bun;
+
+// ../../../code/JS/Bun/just-bun/just_bun-asm/parseRecipes.ts
+function parseRecipes(sfun) {
+  let re = /\b(?:switch\s*\([^\)]+\)|case\s*(?:"[^"]*|void 0)"?\s*:|return\s*|break\s*;|default\s*:)/g;
+  let list = "";
+  let alias = 0;
+  const fStart = (a) => {
+    if (a[0] === "switch")
+      stateF = fMain;
+  };
+  const fMain = (a) => {
+    switch (a[0]) {
+      case "case":
+        list += ["", " / "][alias] ?? " ";
+        alias += 1;
+        list += a[1] === "void" && a[2] === "0" ? "<default>" : a[1];
+        break;
+      case "break":
+      case "return":
+        list += "\n";
+        alias = 0;
+        break;
+      case "default":
+        stateF = null;
+        break;
+      case "switch":
+        stateF = fSkip;
+        break;
+      default:
+        break;
+    }
+  };
+  const fSkip = (a) => {
+    if (a[0] === "default")
+      stateF = fMain;
+  };
+  let stateF = fStart;
+  let arr;
+  while ((arr = re.exec(sfun)) !== null && stateF !== null) {
+    let a = arr[0].split(/ ["\(]|[\);: "]/);
+    stateF(a);
+  }
+  return list;
+}
+
+// ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
 async function start(args) {
   let isGlob = false;
   let displayList = false;
@@ -38,7 +84,7 @@ async function start(args) {
   if (!runRecipe)
     return err(`${runnerPath}/+justbun.mjs does not contain function runRecipe()`);
   if (displayList)
-    return csl(parseRecipes(runRecipe.toString()));
+    return csl(`List of recipes in ${runnerPath}/+justbun.mjs: \n${parseRecipes(runRecipe.toString())}`);
   if (isGlob) {
     args.shift();
   }
@@ -96,12 +142,9 @@ bun i
 bun build ./main.ts --outdir ../ --target bun
 `.cwd(jb_global + "/mainupdate");
 }
-var parseRecipes = function(sfun) {
-  return sfun;
-};
 async function jb_from_template(tmplName = "_") {
   if (Bun.file("+justbun.mjs").size !== 0) {
-    csl("There is already a file +justbun.mjs in the current directory");
+    err("There is already a file +justbun.mjs in the current directory");
     openInEditor(".");
   } else {
     let t = await $`
@@ -111,7 +154,9 @@ async function jb_from_template(tmplName = "_") {
     if (!t)
       return err(`A file matching the pattern "${tmplName}*.js"
                 was not found in ${jb_global}/templates`);
-    await Bun.write("./+justbun.mjs", Bun.file(`${jb_global}/templates/${t}`));
+    let text = await Bun.file(`${jb_global}/templates/${t}`).text();
+    text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/, JSON.stringify(jb_global + "/funcs.mjs") + ";");
+    await Bun.write("./+justbun.mjs", text);
     await openInEditor(".");
   }
 }
@@ -129,7 +174,7 @@ async function openInEditor(path2) {
 }
 var cwd = process.cwd();
 var jb_global = path.dirname(Bun.main);
-var { csl, err } = await import(jb_global + '/funcs.mjs');
+var { csl, err } = await import(jb_global + "/funcs.mjs");
 
 // main.ts
 await start(process.argv.slice(2));
