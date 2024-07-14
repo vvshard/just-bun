@@ -1,19 +1,16 @@
 // A collection of BunSell recipes run by the command `$ jb <recipe> [...args]`
 // BunSell: https://bun.sh/docs/runtime/shell
 
-import { $ } from 'bun';
-import path from 'path';
-
-/** @type {{ p$: typeof $, cl: {nrm, err}}} */
-// const { p$, cl, decode_uXXXX } = await import(Bun.main.slice(0, -7) + 'funcs.mjs'); // local
-import { p$, cl, decode_uXXXX } from './funcs.mjs' // global / dbg 
-
+//@ts-check
+import { $ } from "bun";
+import * as funcs from "./funcs.mjs"
+import path from "path";
 
 //----//////----//////----//////----//////----//////----//////----//////
 
 const jb_global = path.dirname(Bun.main);
 
-export async function runRecipe(recipeName, /**@type {string[]}*/ args = []) {
+export async function runRecipe(recipeName, args = []) {
     switch (recipeName) {
         case undefined: // default
         // process.chdir('C:/Users/vvsh/AppData/Local/Programs/Notepad2e');
@@ -21,6 +18,6 @@ export async function runRecipe(recipeName, /**@type {string[]}*/ args = []) {
             return;
 
         default:
-            return cl.err(`recipeName error: '${recipeName}'`);
+            return funcs.err(`recipeName error: '${recipeName}'`);
     }
 }

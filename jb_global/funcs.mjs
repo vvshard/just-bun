@@ -1,13 +1,18 @@
-import { $ } from 'bun'
+/** Global functions for +justbun.mjs files 
+ * @module funcs  
+*/
 
-// сl is used in main.js: do not remove it or change its type
+//@ts-check
+import { $ } from "bun"
+
+// csl and err are used in main.js: don't remove them. Only changes to labels are allowed.
 /** Prints a message to the console with the appropriate label */
-export const cl = {
-    nrm: (msg) => console.log('◇ ' + msg),
-    err: (msg) => console.log('◆ ' + msg),
-}
+export const csl = (msg) => console.log('◇ ' + msg);
+/** Prints a message to the console with the appropriate label */
+export const err = (msg) => console.log('◆ ' + msg);
 
 //-////////////////////////////////////////////////
+//----//////--  user functions --//////----//////
 
 export function decode_uXXXX(/**@type {string}*/ str) {
     const ru = /\\u[0-9a-fA-F]{4}/;
@@ -20,9 +25,9 @@ export function decode_uXXXX(/**@type {string}*/ str) {
 //-////////////////////////////////////////////////
 //----//////--  decorated $`...` --//////----//////
 
-/** Prints the interpolated command to the console before executing it in $\`...\` */
+/** Prints the interpolated command to the console before executing it in $`...` */
 export function p$(/**@type {TemplateStringsArray}*/ strings, ...expressions) {
-    cl.nrm(expressions.reduce((a, exp, i) => a + (
+    csl(expressions.reduce((a, exp, i) => a + (
         typeof exp === 'string' ? /\s/.test(exp) && !'\'"'.includes(exp[0]) ? `"${exp}"` : exp
             : typeof exp === 'number' ? exp.toString()
                 : exp && 'raw' in exp ? exp.raw

@@ -1,10 +1,9 @@
 // A collection of BunSell recipes run by the command `$ jb <recipe> [...args]`
 // BunSell: https://bun.sh/docs/runtime/shell
 
-import { $ } from "bun"
-/** @type {{ p$: typeof $, cl: {nrm, err}}} */
-const { p$, cl } = await import(Bun.main.slice(0, -7) + 'funcs.mjs'); // local
-// import { p$, cl } from './funcs.mjs' // global / dbg 
+//@ts-check
+import { $ } from "bun";
+import * as funcs from "C:\\Users\\vvsh\\.bun\\j_global/funcs.mjs";
 
 //----//////----//////----//////----//////----//////----//////----//////
 
@@ -13,20 +12,21 @@ export async function runRecipe(recipeName, args = []) {
         case 'run':
         case 'r':
         case undefined: // default
-            return await p$`
+            await funcs.p$`
     cargo run
     `;
+            break
         case 'build_release':
         case 'b':
-            return await p$`
+            return await funcs.p$`
     cargo build --release
     `;
         case 'test':
         case 't':
-            return await p$`
+            return await funcs.p$`
     cargo test
     `;
         default:
-            return cl.err(`recipeName error: '${recipeName}'`);
+            return funcs.err(`recipeName error: '${recipeName}'`);
     }
 }

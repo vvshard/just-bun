@@ -2,16 +2,16 @@
 // BunSell: https://bun.sh/docs/runtime/shell
 
 //@ts-check
-import { $ } from 'bun';
-import * as funcs from "../funcs.mjs"
+import { $ } from "bun";
+import * as funcs from "C:\\Users\\vvsh\\.bun\\j_global/funcs.mjs";
 import path from 'path';
 
 //----//////----//////----//////----//////----//////----//////----//////
 
-const main = __dirname + './src/index.ts';
-const outdir = __dirname + './out';
+const main = __dirname + '/../tests/index.js';
+const outdir = __dirname + '../tests/out';
 
-export async function runRecipe(recipeName, /**@type {string[]}*/ args = []) {
+export async function runRecipe(recipeName, args = []) {
     switch (recipeName) {
         case 'run':
         case 'r':
@@ -47,10 +47,10 @@ async function buildAndDecode_uXXXX() {
     let ns = Bun.nanoseconds();
     const build = await Bun.build({ entrypoints: [main] });
     let out = await build.outputs.find(o => o.kind === 'entry-point')?.text() ?? 'entry-point not found';
-    console.log(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] build`);
+    funcs.csl(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] build`);
     out = funcs.decode_uXXXX(out);
-    console.log(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] decoding`);
+    funcs.csl(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] decoding`);
     const outFile = path.join(outdir, path.basename(main));
     await Bun.write(outFile, out);
-    console.log(`[${((Bun.nanoseconds() - ns) / 1000_000).toFixed()} ms] write`);
+    funcs.csl(`[${((Bun.nanoseconds() - ns) / 1000_000).toFixed()} ms] write`);
 }
