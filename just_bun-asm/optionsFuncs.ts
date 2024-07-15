@@ -74,8 +74,7 @@ export async function jb_from_template(tmplName = '_') {
         if (!t)
             return err(`A file matching the pattern "${tmplName}*.js"
                 was not found in ${jb_global}/templates`);
-
-        // await Bun.write('./just_bun.mjs', Bun.file(`${jb_global}/templates/${t}`));
+        csl(`Template found: ${t}`);
         let text = await Bun.file(`${jb_global}/templates/${t}`).text();
         text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/,
             JSON.stringify(jb_global + '/funcs.mjs') + ';');
@@ -116,9 +115,9 @@ export async function runByNumber(runRecipe: (recipeName: any, args?: string[]) 
         } else {
             let recipeName = listR[n - 1].split('/')[0].trim();
             if (recipeName === '<default>') {
-                runRecipe(undefined);
+                await runRecipe(undefined);
             } else {
-                runRecipe(recipeName, args);
+                await runRecipe(recipeName, args);
             }
             return;
         }

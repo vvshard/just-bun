@@ -27,11 +27,11 @@ export function decode_uXXXX(/**@type {string}*/ str) {
 
 /** Prints the interpolated command to the console before executing it in $`...` */
 export function p$(/**@type {TemplateStringsArray}*/ strings, ...expressions) {
-    csl(expressions.reduce((a, exp, i) => a + (
+    csl(expressions.reduce((/**@type {string}*/ a, exp, i) => a + (
         typeof exp === 'string' ? /\s/.test(exp) && !'\'"'.includes(exp[0]) ? `"${exp}"` : exp
             : typeof exp === 'number' ? exp.toString()
                 : exp && 'raw' in exp ? exp.raw
                     : `{${exp}}`
-    ) + strings[i + 1], '$ ' + strings[0].replace(/\s+/, '')));
+    ) + strings[i + 1], '$ ' + strings[0]).replace(/\n[ \t]*/g, '\n    '));
     return $(strings, ...expressions);
 }

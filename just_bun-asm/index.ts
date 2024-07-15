@@ -69,7 +69,7 @@ export async function start(args: string[]) {
     if (displayList === 'select')
         return optFn.runByNumber(runRecipe);
 
-    runRecipe(args.shift(), args);
+    await runRecipe(args.shift(), args);
 }
 
 function printHelp() {
