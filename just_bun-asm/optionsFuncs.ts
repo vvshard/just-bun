@@ -112,7 +112,7 @@ export async function runByNumber(runRecipe: (recipeName: any, args?: string[]) 
         + listR.map((s, i) => `${i + 1}. ${s}`).join('\n'));
     for await (const line of console) {
         if (!line)
-            return;
+            return csl('Reset');
         const args = line.split(' ');
         const n = Math.floor(Number(args.shift()));
         if (isNaN(n)) {
