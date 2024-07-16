@@ -1,18 +1,19 @@
 import path from "path";
 import { $, Glob } from "bun";
 import { parseRecipes } from "./parseRecipes";
+
 /** Prints a message to the console with the appropriate label */
 export const csl = (msg: string) => console.log('◇ ' + msg.replace('\n', '\n  '));
 /** Prints a message to the console with the appropriate label */
 export const err = (msg: string) => console.log('◆ ' + msg.replace('\n', '\n  '));
 export const jb_global = path.dirname(Bun.main);
-
-const config = await Bun.file(jb_global + '/package.json').json();
 const cwd = process.cwd();
-const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN].ts';
-const jbGlob = new Glob(jbPattern);
-const ignoreGlob = new Glob('.gitignore');
-// const templatesGlob = new Glob(`templates-${jbPattern}/`);
+const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
+const jbGlob = new Glob(jbPattern + '.ts');
+const gitignoreGlob = new Glob('.gitignore');
+let filePackage = Bun.file(jb_global + '/package.json');
+const config = filePackage.size === 0 ? undefined
+    : await Bun.file(jb_global + '/package.json').json();
 
 export function findPath(glob = jbGlob): string {
     let currentPath: string;
@@ -44,7 +45,7 @@ export async function installTypes() {
     }
 
     if (!exist_gitignore) {
-        const gitignore_path = findPath(ignoreGlob);
+        const gitignore_path = findPath(gitignoreGlob);
         if (gitignore_path !== 'Not found ↑') {
             const file = Bun.file(gitignore_path + '/.gitignore');
             let gitignore_text = await file.text();
@@ -73,35 +74,33 @@ bun build ./main.ts --outdir ../ --target bun
 }
 
 export async function jbFromTemplate(tmplName = '_') {
-    const rcpFile = [...jbGlob.scanSync({ dot: true, absolute: true })][0];
+    const rcpFile = [...jbGlob.scanSync({ dot: true })][0];
     if (rcpFile) {
-        err('There is already a file just_bun.ts in the current directory');
-        openInEditor('.');
+        err(`There is already a file "${rcpFile}" in the current directory`);
+        openInEditor(rcpFile);
     } else {
-        let t = await $`
-        ls ${tmplName}*.mjs
-        `.cwd(jb_global + '/templates').nothrow().text();
-        t = t.split(/[\n\r]/)[0].trim();
-        if (!t)
-            return err(`A file matching the pattern "${tmplName}*.js"
-                was not found in ${jb_global}/templates`);
-        csl(`Template found: ${t}`);
-        let text = await Bun.file(`${jb_global}/templates/${t}`).text();
-        text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/g,
-            JSON.stringify(jb_global + '/funcs.mjs') + ';');
-        await Bun.write('./just_bun.ts', text);
+        const tmpltGlob = new Glob(`templates-${jbPattern}/${tmplName}*.ts`);
+        const tmpltPath = [...tmpltGlob.scanSync({ cwd: jb_global, dot: true, absolute: true })][0];
+        if (!tmpltPath)
+            return err(`The template file matching the pattern "${tmplName}*.ts" was not found.`);
 
-        await openInEditor('.');
+        csl(`Template found: ${tmpltPath}`);
+        let text = await Bun.file(`${tmpltPath}`).text();
+        text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g,
+            JSON.stringify(jb_global + '/funcs.ts') + ';');
+        const jbName = path.basename(path.dirname(tmpltPath)).slice(10) + '.ts';
+        await Bun.write(jbName, text);
+
+        await openInEditor(jbName);
     }
 }
 
-export async function openInEditor(path: string) {
-    if (path === 'Not found ↑')
+export async function openInEditor(file: string) {
+    if (file === 'Not found ↑')
         return err('Not found recipe file');
 
     const openCommand: string = config?.editor?.fileOpen ?? 'code --goto %file%';
-
-    const { stderr, exitCode } = await $`${{ raw: openCommand.replace('%file%', path) }}`.nothrow();
+    const { stderr, exitCode } = await $`${{ raw: openCommand.replace('%file%', file) }}`.nothrow();
     if (exitCode !== 0) {
         err(`Error opening recipe file:\n${stderr}`);
     }
