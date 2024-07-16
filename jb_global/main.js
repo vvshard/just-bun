@@ -1,7 +1,6 @@
 // @bun
 // ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
-import path from "path";
-var {$ } = globalThis.Bun;
+import path2 from "path";
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/parseRecipes.ts
 function parseRecipes(sfun) {
@@ -47,6 +46,122 @@ function parseRecipes(sfun) {
   return list.trim();
 }
 
+// ../../../code/JS/Bun/just-bun/just_bun-asm/optionsFuncs.ts
+import path from "path";
+var {$, Glob } = globalThis.Bun;
+function findPath(glob = jbGlob) {
+  let currentPath;
+  let parentPath = cwd;
+  do {
+    const res = [...glob.scanSync({ cwd: parentPath, dot: true, absolute: true })][0];
+    if (res)
+      return res;
+    currentPath = parentPath;
+    parentPath = path.dirname(currentPath);
+  } while (parentPath != currentPath);
+  return "Not found \u2191";
+}
+async function installTypes() {
+  const jb_path = findPath();
+  if (jb_path === "Not found \u2191")
+    return err("Not found \u2191 recipe file");
+  let exist_gitignore = false;
+  process.chdir(jb_path);
+  if (Bun.file("./package.json").size === 0) {
+    await $`bun add @types/bun --no-save; rm package.json`;
+  } else {
+    exist_gitignore = true;
+    await $`bun add @types/bun -d`;
+  }
+  if (!exist_gitignore) {
+    const gitignore_path = findPath(ignoreGlob);
+    if (gitignore_path !== "Not found \u2191") {
+      const file = Bun.file(gitignore_path + "/.gitignore");
+      let gitignore_text = await file.text();
+      if (gitignore_text.startsWith("node_modules/") || /\nnode_modules\//.test(gitignore_text)) {
+        exist_gitignore = true;
+      } else if (jb_path === ".") {
+        await Bun.write(file, gitignore_text + "\nnode_modules/");
+        exist_gitignore = true;
+      }
+    }
+  }
+  if (!exist_gitignore) {
+    await Bun.write("./.gitignore", "node_modules/");
+  }
+}
+async function mainupdate() {
+  const mainTs = jb_global + "/mainupdate/main.ts";
+  if (Bun.file(mainTs).size === 0)
+    return err("Not found " + mainTs);
+  await $`
+bun i
+bun build ./main.ts --outdir ../ --target bun
+`.cwd(jb_global + "/mainupdate");
+}
+async function jbFromTemplate(tmplName = "_") {
+  const rcpFile = [...jbGlob.scanSync({ dot: true, absolute: true })][0];
+  if (rcpFile) {
+    err("There is already a file just_bun.ts in the current directory");
+    openInEditor(".");
+  } else {
+    let t = await $`
+        ls ${tmplName}*.mjs
+        `.cwd(jb_global + "/templates").nothrow().text();
+    t = t.split(/[\n\r]/)[0].trim();
+    if (!t)
+      return err(`A file matching the pattern "${tmplName}*.js"
+                was not found in ${jb_global}/templates`);
+    csl(`Template found: ${t}`);
+    let text = await Bun.file(`${jb_global}/templates/${t}`).text();
+    text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/g, JSON.stringify(jb_global + "/funcs.mjs") + ";");
+    await Bun.write("./just_bun.ts", text);
+    await openInEditor(".");
+  }
+}
+async function openInEditor(path2) {
+  if (path2 === "Not found \u2191")
+    return err("Not found recipe file");
+  const openCommand = config?.editor?.fileOpen ?? "code --goto %file%";
+  const { stderr, exitCode } = await $`${{ raw: openCommand.replace("%file%", path2) }}`.nothrow();
+  if (exitCode !== 0) {
+    err(`Error opening recipe file:\n${stderr}`);
+  }
+}
+async function runByNumber(runRecipe) {
+  const listR = parseRecipes(runRecipe.toString()).split("\n");
+  csl("Enter the recipe number and, if necessary, arguments:");
+  console.log(listR.map((s, i) => `${i + 1}. ${s}`).join("\n"));
+  for await (const line of console) {
+    if (!line)
+      return;
+    const args = line.split(" ");
+    const n = Math.floor(Number(args.shift()));
+    if (isNaN(n)) {
+      console.write("Enter the recipe NUMBER\n");
+    } else if (n < 1 || n > listR.length) {
+      console.write("Number outside the list\n");
+    } else {
+      let recipeName = listR[n - 1].split("/")[0].trim();
+      if (recipeName === "<default>") {
+        await runRecipe(undefined);
+      } else {
+        await runRecipe(recipeName, args);
+      }
+      return;
+    }
+  }
+}
+var csl = (msg) => console.log("\u25C7 " + msg.replace("\n", "\n  "));
+var err = (msg) => console.log("\u25C6 " + msg.replace("\n", "\n  "));
+var jb_global = path.dirname(Bun.main);
+console.log(jb_global);
+var config = await Bun.file(jb_global + "/package.json").json();
+var cwd = process.cwd();
+var jbPattern = "{.,}[jJ][uU][sS][tT]_[bB][uU][nN].ts";
+var jbGlob = new Glob(jbPattern);
+var ignoreGlob = new Glob(".gitignore");
+
 // ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
 async function start(args) {
   let isGlob = false;
@@ -57,17 +172,17 @@ async function start(args) {
     case "-h":
       return printHelp();
     case "-t":
-      return jb_from_template(args[1]);
+      return jbFromTemplate(args[1]);
     case "-@":
       return installTypes();
     case "-u":
       return mainupdate();
     case "-P":
-      return csl(`Path to global just_bun.mjs: ${jb_global}/`);
+      return csl(`Path to global recipe file: ${jb_global}/just_bun.ts`);
     case "-p":
-      return csl(`Path to just_bun.mjs: ${findPath()}/`);
+      return csl(`Path to recipe file: ${findPath()}`);
     case "-O":
-      return openInEditor(jb_global);
+      return openInEditor(jb_global + "/just_bun.ts");
     case "-o":
       return openInEditor(findPath());
     case "-L":
@@ -95,125 +210,20 @@ async function start(args) {
   if (!runnerPath) {
     runnerPath = isGlob ? jb_global : findPath();
     if (runnerPath === "Not found \u2191")
-      return err("Not found \u2191 just_bun.mjs");
-    runnerPath += "/just_bun.mjs";
+      return err("Not found \u2191 just_bun.ts");
   }
-  const { runRecipe } = await import(path.resolve(runnerPath));
+  const { runRecipe } = await import(path2.resolve(runnerPath));
   if (!runRecipe)
     return err(`${runnerPath} does not contain function runRecipe()`);
   if (displayList === "show")
     return csl(`List of recipes in ${runnerPath}: \n${parseRecipes(runRecipe.toString())}`);
   if (displayList === "select")
     return runByNumber(runRecipe);
-  runRecipe(args.shift(), args);
+  await runRecipe(args.shift(), args);
 }
 var printHelp = function() {
   csl("Help3");
 };
-var findPath = function(file = "just_bun.mjs") {
-  let currentPath = ".";
-  let parentPath = cwd;
-  do {
-    if (Bun.file(`${parentPath}/${file}`).size !== 0)
-      return currentPath === "." ? "." : parentPath;
-    currentPath = parentPath;
-    parentPath = path.dirname(currentPath);
-  } while (parentPath != currentPath);
-  return "Not found \u2191";
-};
-async function installTypes() {
-  const jb_path = findPath();
-  if (jb_path === "Not found \u2191")
-    return err("Not found \u2191 just_bun.mjs");
-  let exist_gitignore = false;
-  process.chdir(jb_path);
-  if (Bun.file("./package.json").size === 0) {
-    await $`bun add @types/bun --no-save; rm package.json`;
-  } else {
-    exist_gitignore = true;
-    await $`bun add @types/bun -d`;
-  }
-  if (!exist_gitignore) {
-    const gitignore_path = findPath(".gitignore");
-    if (gitignore_path !== "Not found \u2191") {
-      const file = Bun.file(gitignore_path + "/.gitignore");
-      let gitignore_text = await file.text();
-      if (gitignore_text.startsWith("node_modules/") || /\nnode_modules\//.test(gitignore_text)) {
-        exist_gitignore = true;
-      } else if (jb_path === ".") {
-        await Bun.write(file, gitignore_text + "\nnode_modules/");
-        exist_gitignore = true;
-      }
-    }
-  }
-  if (!exist_gitignore) {
-    await Bun.write("./.gitignore", "node_modules/");
-  }
-}
-async function mainupdate() {
-  const mainTs = jb_global + "/mainupdate/main.ts";
-  if (Bun.file(mainTs).size === 0)
-    return err("Not found " + mainTs);
-  await $`
-bun i
-bun build ./main.ts --outdir ../ --target bun
-`.cwd(jb_global + "/mainupdate");
-}
-async function jb_from_template(tmplName = "_") {
-  if (Bun.file("just_bun.mjs").size !== 0) {
-    err("There is already a file just_bun.mjs in the current directory");
-    openInEditor(".");
-  } else {
-    let t = await $`
-        ls ${tmplName}*.mjs
-        `.cwd(jb_global + "/templates").nothrow().text();
-    t = t.split(/[\n\r]/)[0].trim();
-    if (!t)
-      return err(`A file matching the pattern "${tmplName}*.js"
-                was not found in ${jb_global}/templates`);
-    let text = await Bun.file(`${jb_global}/templates/${t}`).text();
-    text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/, JSON.stringify(jb_global + "/funcs.mjs") + ";");
-    await Bun.write("./just_bun.mjs", text);
-    await openInEditor(".");
-  }
-}
-async function openInEditor(path2) {
-  if (path2 === "Not found \u2191")
-    return err("Not found just_bun.mjs");
-  const config = await Bun.file(jb_global + "/package.json").json();
-  const openCommand = config.editor?.fileOpen;
-  if (!openCommand)
-    return err(`In ${jb_global}/package.json not specified editor.fileOpen`);
-  const { stderr, exitCode } = path2 === "." ? await $`${{ raw: openCommand.replace("%file%", "./just_bun.mjs") }}`.nothrow() : await $`${{ raw: openCommand.replace("%file%", "./just_bun.mjs") }}`.nothrow().cwd(path2);
-  if (exitCode !== 0) {
-    err(`Error opening "just_bun.mjs":\n   ${stderr}`);
-  }
-}
-async function runByNumber(runRecipe) {
-  const listR = parseRecipes(runRecipe.toString()).split("\n");
-  csl("Enter the recipe number and, if necessary, arguments:");
-  console.log(listR.map((s, i) => `${i + 1}. ${s}`).join("\n"));
-  for await (const line of console) {
-    const args = line.split(" ");
-    const n = Math.floor(Number(args.shift()));
-    if (isNaN(n)) {
-      console.write("Enter the recipe NUMBER\n");
-    } else if (n < 1 || n > listR.length) {
-      console.write("Number outside the list\n");
-    } else {
-      let recipeName = listR[n - 1].split("/")[0].trim();
-      if (recipeName === "<default>") {
-        runRecipe(undefined);
-      } else {
-        runRecipe(recipeName, args);
-      }
-      return;
-    }
-  }
-}
-var cwd = process.cwd();
-var jb_global = path.dirname(Bun.main);
-var { csl, err } = await import(jb_global + "/funcs.mjs");
 
 // main.ts
 await start(process.argv.slice(2));

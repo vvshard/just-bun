@@ -1,17 +1,27 @@
 import path from "path";
-import { $ } from "bun";
+import { $, Glob } from "bun";
 import { parseRecipes } from "./parseRecipes";
-import { jb_global, csl, err } from ".";
+/** Prints a message to the console with the appropriate label */
+export const csl = (msg: string) => console.log('◇ ' + msg.replace('\n', '\n  '));
+/** Prints a message to the console with the appropriate label */
+export const err = (msg: string) => console.log('◆ ' + msg.replace('\n', '\n  '));
+export const jb_global = path.dirname(Bun.main);
 
+const config = await Bun.file(jb_global + '/package.json').json();
 const cwd = process.cwd();
+const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN].ts';
+const jbGlob = new Glob(jbPattern);
+const ignoreGlob = new Glob('.gitignore');
+// const templatesGlob = new Glob(`templates-${jbPattern}/`);
 
-export function findPath(file = 'just_bun.mjs'): string {
-    let currentPath = '.';
+export function findPath(glob = jbGlob): string {
+    let currentPath: string;
     let parentPath = cwd;
 
     do {
-        if (Bun.file(`${parentPath}/${file}`).size !== 0)
-            return currentPath === '.' ? '.' : parentPath;
+        const res = [...glob.scanSync({ cwd: parentPath, dot: true, absolute: true })][0];
+        if (res)
+            return res;
         currentPath = parentPath;
         parentPath = path.dirname(currentPath);
     } while (parentPath != currentPath);
@@ -22,7 +32,7 @@ export function findPath(file = 'just_bun.mjs'): string {
 export async function installTypes() {
     const jb_path = findPath();
     if (jb_path === 'Not found ↑')
-        return err('Not found ↑ just_bun.mjs');
+        return err('Not found ↑ recipe file');
     let exist_gitignore = false;
 
     process.chdir(jb_path);
@@ -34,7 +44,7 @@ export async function installTypes() {
     }
 
     if (!exist_gitignore) {
-        const gitignore_path = findPath('.gitignore');
+        const gitignore_path = findPath(ignoreGlob);
         if (gitignore_path !== 'Not found ↑') {
             const file = Bun.file(gitignore_path + '/.gitignore');
             let gitignore_text = await file.text();
@@ -62,9 +72,10 @@ bun build ./main.ts --outdir ../ --target bun
 `.cwd(jb_global + "/mainupdate");
 }
 
-export async function jb_from_template(tmplName = '_') {
-    if (Bun.file('just_bun.mjs').size !== 0) {
-        err('There is already a file just_bun.mjs in the current directory');
+export async function jbFromTemplate(tmplName = '_') {
+    const rcpFile = [...jbGlob.scanSync({ dot: true, absolute: true })][0];
+    if (rcpFile) {
+        err('There is already a file just_bun.ts in the current directory');
         openInEditor('.');
     } else {
         let t = await $`
@@ -76,9 +87,9 @@ export async function jb_from_template(tmplName = '_') {
                 was not found in ${jb_global}/templates`);
         csl(`Template found: ${t}`);
         let text = await Bun.file(`${jb_global}/templates/${t}`).text();
-        text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/,
+        text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.mjs['"] *;?/g,
             JSON.stringify(jb_global + '/funcs.mjs') + ';');
-        await Bun.write('./just_bun.mjs', text);
+        await Bun.write('./just_bun.ts', text);
 
         await openInEditor('.');
     }
@@ -86,18 +97,13 @@ export async function jb_from_template(tmplName = '_') {
 
 export async function openInEditor(path: string) {
     if (path === 'Not found ↑')
-        return err('Not found just_bun.mjs');
+        return err('Not found recipe file');
 
-    const config = await Bun.file(jb_global + '/package.json').json();
-    const openCommand: string | undefined = config.editor?.fileOpen;
-    if (!openCommand)
-        return err(`In ${jb_global}/package.json not specified editor.fileOpen`);
+    const openCommand: string = config?.editor?.fileOpen ?? 'code --goto %file%';
 
-    const { stderr, exitCode } = path === '.'
-        ? await $`${{ raw: openCommand.replace('%file%', './just_bun.mjs') }}`.nothrow()
-        : await $`${{ raw: openCommand.replace('%file%', './just_bun.mjs') }}`.nothrow().cwd(path);
+    const { stderr, exitCode } = await $`${{ raw: openCommand.replace('%file%', path) }}`.nothrow();
     if (exitCode !== 0) {
-        err(`Error opening "just_bun.mjs":\n   ${stderr}`);
+        err(`Error opening recipe file:\n${stderr}`);
     }
 }
 
@@ -106,6 +112,8 @@ export async function runByNumber(runRecipe: (recipeName: any, args?: string[]) 
     csl('Enter the recipe number and, if necessary, arguments:');
     console.log(listR.map((s, i) => `${i + 1}. ${s}`).join('\n'));
     for await (const line of console) {
+        if (!line)
+            return;
         const args = line.split(' ');
         const n = Math.floor(Number(args.shift()));
         if (isNaN(n)) {

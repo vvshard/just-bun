@@ -1,32 +1,27 @@
 // A collection of BunSell recipes run by the command `$ jb <recipe> [...args]`
 // BunSell: https://bun.sh/docs/runtime/shell
 
-//@ts-check
 import { $ } from "bun";
-import * as funcs from "../funcs.mjs"
+import { p$, csl, err } from "../funcs.ts"
 
 //----//////----//////----//////----//////----//////----//////----//////
 
-export async function runRecipe(recipeName, args = []) {
+export async function runRecipe(recipeName: string, args = []) {
     switch (recipeName) {
         case 'run':
         case 'r':
         case undefined: // default
-            await funcs.p$`
-    cargo run
-    `;
-            break
+            await p$`cargo run`;
+            break;
         case 'build_release':
         case 'b':
-            return await funcs.p$`
-    cargo build --release
-    `;
+            await p$`cargo build --release`;
+            break;
         case 'test':
         case 't':
-            return await funcs.p$`
-    cargo test
-    `;
+            await p$`cargo test`;
+            break;
         default:
-            return funcs.err(`recipeName error: '${recipeName}'`);
+            return err(`recipeName error: '${recipeName}'`);
     }
 }

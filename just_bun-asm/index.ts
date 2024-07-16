@@ -1,10 +1,6 @@
 import path from "path";
 import { parseRecipes } from "./parseRecipes";
 import * as optFn from "./optionsFuncs";
-export const jb_global = path.dirname(Bun.main);
-/** Prints a message to the console with the appropriate label */
-type Csl = (msg: string) => void;
-export const { csl, err }: { csl: Csl, err: Csl } = await import(jb_global + '/funcs.mjs');
 
 export async function start(args: string[]) {
     let isGlob = false;
@@ -16,17 +12,17 @@ export async function start(args: string[]) {
         case '-h':
             return printHelp();
         case '-t':
-            return optFn.jb_from_template(args[1]);
+            return optFn.jbFromTemplate(args[1]);
         case '-@':
             return optFn.installTypes();
         case '-u':
             return optFn.mainupdate();
         case '-P':
-            return csl(`Path to global just_bun.mjs: ${jb_global}/`);
+            return optFn.csl(`Path to global recipe file: ${optFn.jb_global}/just_bun.ts`);
         case '-p':
-            return csl(`Path to just_bun.mjs: ${optFn.findPath()}/`);
+            return optFn.csl(`Path to recipe file: ${optFn.findPath()}`);
         case '-O':
-            return optFn.openInEditor(jb_global);
+            return optFn.openInEditor(optFn.jb_global + '/just_bun.ts');
         case '-o':
             return optFn.openInEditor(optFn.findPath());
         case '-L':
@@ -43,28 +39,27 @@ export async function start(args: string[]) {
             args.shift();
             runnerPath = args.shift() ?? "";
             if (!runnerPath)
-                return err('File path not passed');
+                return optFn.err('File path not passed');
             if (Bun.file(runnerPath).size === 0 || !runnerPath.endsWith('js'))
-                return err('Incorrect file path');
+                return optFn.err('Incorrect file path');
             break;
         case '-g':
             args.shift();
             isGlob = true;
     }
     if (!runnerPath) {
-        runnerPath = (isGlob ? jb_global : optFn.findPath());
+        runnerPath = (isGlob ? optFn.jb_global : optFn.findPath());
         if (runnerPath === 'Not found ↑')
-            return err('Not found ↑ just_bun.mjs');
-        runnerPath += '/just_bun.mjs';
+            return optFn.err('Not found ↑ just_bun.ts');
     }
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
         = await import(path.resolve(runnerPath));
 
     if (!runRecipe)
-        return err(`${runnerPath} does not contain function runRecipe()`);
+        return optFn.err(`${runnerPath} does not contain function runRecipe()`);
 
     if (displayList === 'show')
-        return csl(`List of recipes in ${runnerPath}: \n${parseRecipes(runRecipe.toString())}`);
+        return optFn.csl(`List of recipes in ${runnerPath}: \n${parseRecipes(runRecipe.toString())}`);
 
     if (displayList === 'select')
         return optFn.runByNumber(runRecipe);
@@ -73,7 +68,7 @@ export async function start(args: string[]) {
 }
 
 function printHelp() {
-    csl('Help3');
+    optFn.csl('Help3');
 
 }
 
