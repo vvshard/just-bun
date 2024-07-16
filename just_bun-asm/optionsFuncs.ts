@@ -3,9 +3,9 @@ import { $, Glob } from "bun";
 import { parseRecipes } from "./parseRecipes";
 
 /** Prints a message to the console with the appropriate label */
-export const csl = (msg: string) => console.log('◇ ' + msg.replace('\n', '\n  '));
+export const csl = (msg: string) => console.log('◇ ' + msg.replaceAll('\n', '\n  '));
 /** Prints a message to the console with the appropriate label */
-export const err = (msg: string) => console.log('◆ ' + msg.replace('\n', '\n  '));
+export const err = (msg: string) => console.log('◆ ' + msg.replaceAll('\n', '\n  '));
 export const jb_global = path.dirname(Bun.main);
 const cwd = process.cwd();
 const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
@@ -108,8 +108,8 @@ export async function openInEditor(file: string) {
 
 export async function runByNumber(runRecipe: (recipeName: any, args?: string[]) => Promise<any>) {
     const listR = parseRecipes(runRecipe.toString()).split('\n');
-    csl('Enter the recipe number and, if necessary, arguments:');
-    console.log(listR.map((s, i) => `${i + 1}. ${s}`).join('\n'));
+    csl('Enter the recipe number and, if necessary, arguments:\n'
+        + listR.map((s, i) => `${i + 1}. ${s}`).join('\n'));
     for await (const line of console) {
         if (!line)
             return;

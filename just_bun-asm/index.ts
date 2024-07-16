@@ -40,7 +40,7 @@ export async function start(args: string[]) {
             runnerPath = args.shift() ?? "";
             if (!runnerPath)
                 return optFn.err('File path not passed');
-            if (Bun.file(runnerPath).size === 0 || !runnerPath.endsWith('js'))
+            if (!runnerPath.endsWith('.ts') || Bun.file(runnerPath).size === 0)
                 return optFn.err('Incorrect file path');
             break;
         case '-g':
@@ -48,9 +48,9 @@ export async function start(args: string[]) {
             isGlob = true;
     }
     if (!runnerPath) {
-        runnerPath = (isGlob ? optFn.jb_global : optFn.findPath());
+        runnerPath = (isGlob ? optFn.jb_global + '/just_bun.ts' : optFn.findPath());
         if (runnerPath === 'Not found ↑')
-            return optFn.err('Not found ↑ just_bun.ts');
+            return optFn.err('Not found ↑ recipe file');
     }
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
         = await import(path.resolve(runnerPath));
@@ -59,7 +59,7 @@ export async function start(args: string[]) {
         return optFn.err(`${runnerPath} does not contain function runRecipe()`);
 
     if (displayList === 'show')
-        return optFn.csl(`List of recipes in ${runnerPath}: \n${parseRecipes(runRecipe.toString())}`);
+        return optFn.csl(`List of recipes in ${runnerPath}:\n${parseRecipes(runRecipe.toString())}`);
 
     if (displayList === 'select')
         return optFn.runByNumber(runRecipe);
