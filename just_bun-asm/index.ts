@@ -5,7 +5,7 @@ import * as optFn from "./optionsFuncs";
 export async function start(args: string[]) {
     let isGlob = false;
     let displayList: 'none' | 'show' | 'select' = 'none';
-    let runnerPath = "";
+    let runnerPath: string | undefined;
 
     switch (args[0]) {
         case '--help':
@@ -20,7 +20,7 @@ export async function start(args: string[]) {
         case '-P':
             return optFn.csl(`Path to global recipe file: ${optFn.jb_global}/just_bun.ts`);
         case '-p':
-            return optFn.csl(`Path to recipe file: ${optFn.findPath()}`);
+            return optFn.csl(`Path to recipe file: ${optFn.findPath() ?? 'Not found ↑'}`);
         case '-O':
             return optFn.openInEditor(optFn.jb_global + '/just_bun.ts');
         case '-o':
@@ -37,7 +37,7 @@ export async function start(args: string[]) {
             break;
         case '-f':
             args.shift();
-            runnerPath = args.shift() ?? "";
+            runnerPath = args.shift();
             if (!runnerPath)
                 return optFn.err('File path not passed');
             if (!runnerPath.endsWith('.ts') || Bun.file(runnerPath).size === 0)
@@ -49,14 +49,14 @@ export async function start(args: string[]) {
     }
     if (!runnerPath) {
         runnerPath = (isGlob ? optFn.jb_global + '/just_bun.ts' : optFn.findPath());
-        if (runnerPath === 'Not found ↑')
+        if (!runnerPath)
             return optFn.err('Not found ↑ recipe file');
     }
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
         = await import(path.resolve(runnerPath));
 
     if (!runRecipe)
-        return optFn.err(`${runnerPath} does not contain function runRecipe()`);
+        return optFn.err(`${runnerPath} does not contain export function runRecipe()`);
 
     if (displayList === 'show')
         return optFn.csl(`List of recipes in ${runnerPath}:\n${parseRecipes(runRecipe.toString())}`);

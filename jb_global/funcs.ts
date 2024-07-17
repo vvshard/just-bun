@@ -1,4 +1,4 @@
-// Global functions and constants for just_bun.mjs files
+// Global functions and constants for recipe files
 
 import { $ } from "bun"
 

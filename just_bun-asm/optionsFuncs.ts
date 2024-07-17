@@ -7,59 +7,58 @@ export const csl = (msg: string) => console.log('◇ ' + msg.replaceAll('\n', '\
 /** Prints a message to the console with the appropriate label */
 export const err = (msg: string) => console.log('◆ ' + msg.replaceAll('\n', '\n  '));
 export const jb_global = path.dirname(Bun.main);
-const cwd = process.cwd();
+
 const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
 const jbGlob = new Glob(jbPattern + '.ts');
 const gitignoreGlob = new Glob('.gitignore');
 let filePackage = Bun.file(jb_global + '/package.json');
-const config = filePackage.size === 0 ? undefined
-    : await Bun.file(jb_global + '/package.json').json();
+const package_json = !filePackage.size ? undefined : await filePackage.json();
 
-export function findPath(glob = jbGlob): string {
+export function findPath(glob = jbGlob): string | undefined {
     let currentPath: string;
-    let parentPath = cwd;
+    let parentPath = process.cwd();
 
     do {
-        const res = [...glob.scanSync({ cwd: parentPath, dot: true, absolute: true })][0];
+        const res = glob.scanSync({ cwd: parentPath, dot: true, absolute: true }).next().value;
         if (res)
             return res;
         currentPath = parentPath;
         parentPath = path.dirname(currentPath);
     } while (parentPath != currentPath);
 
-    return 'Not found ↑';
+    return undefined;
 }
 
 export async function installTypes() {
-    const jb_path = findPath();
-    if (jb_path === 'Not found ↑')
-        return err('Not found ↑ recipe file');
-    let exist_gitignore = false;
-
-    process.chdir(jb_path);
-    if (Bun.file('./package.json').size === 0) {
-        await $`bun add @types/bun --no-save; rm package.json`;
-    } else {
-        exist_gitignore = true;
-        await $`bun add @types/bun -d`;
+    let jb_path = findPath();
+    if (jb_path) {
+        process.chdir(path.dirname(jb_path));
     }
-
-    if (!exist_gitignore) {
+    let no_gitignore = !Bun.file('./package.json').size;
+    if (no_gitignore) {
+        csl('$ bun add @types/bun --no-save');
+        await $`bun add @types/bun --no-save`;
+        if (Bun.file('./package.json').size) {
+            await $`rm package.json`;
+        }
         const gitignore_path = findPath(gitignoreGlob);
-        if (gitignore_path !== 'Not found ↑') {
-            const file = Bun.file(gitignore_path + '/.gitignore');
+        if (gitignore_path) {
+            const file = Bun.file(gitignore_path);
             let gitignore_text = await file.text();
             if (gitignore_text.startsWith('node_modules/')
                 || /\nnode_modules\//.test(gitignore_text)) {
-                exist_gitignore = true;
-            } else if (jb_path === '.') {
+                no_gitignore = false;
+            } else if (path.relative(process.cwd(), gitignore_path) === '.gitignore') {
                 await Bun.write(file, gitignore_text + '\nnode_modules/');
-                exist_gitignore = true;
+                no_gitignore = false;
             }
         }
-    }
-    if (!exist_gitignore) {
-        await Bun.write('./.gitignore', 'node_modules/');
+        if (no_gitignore) {
+            await Bun.write('./.gitignore', 'node_modules/');
+        }
+    } else {
+        csl('bun add @types/bun -d');
+        await $`bun add @types/bun -d`;
     }
 }
 
@@ -74,13 +73,13 @@ bun build ./main.ts --outdir ../ --target bun
 }
 
 export async function jbFromTemplate(tmplName = '_') {
-    const rcpFile = [...jbGlob.scanSync({ dot: true })][0];
+    const rcpFile = jbGlob.scanSync({ dot: true }).next().value;
     if (rcpFile) {
         err(`There is already a file "${rcpFile}" in the current directory`);
         openInEditor(rcpFile);
     } else {
-        const tmpltGlob = new Glob(`templates-${jbPattern}/${tmplName}*.ts`);
-        const tmpltPath = [...tmpltGlob.scanSync({ cwd: jb_global, dot: true, absolute: true })][0];
+        const glob = new Glob(`templates-${jbPattern}/${tmplName}*.ts`);
+        const tmpltPath = glob.scanSync({ cwd: jb_global, dot: true, absolute: true }).next().value;
         if (!tmpltPath)
             return err(`The template file matching the pattern "${tmplName}*.ts" was not found.`);
 
@@ -95,12 +94,15 @@ export async function jbFromTemplate(tmplName = '_') {
     }
 }
 
-export async function openInEditor(file: string) {
-    if (file === 'Not found ↑')
+export async function openInEditor(file?: string) {
+    if (!file)
         return err('Not found recipe file');
-
-    const openCommand: string = config?.editor?.fileOpen ?? 'code --goto %file%';
-    const { stderr, exitCode } = await $`${{ raw: openCommand.replace('%file%', file) }}`.nothrow();
+    const openCommand: string = (package_json?.editor?.fileOpen ?? 'code --goto %file%')
+        .replace('%file%', `"${file}"`);
+    if (openCommand === 'none')
+        return csl(`File opening disabled in ${jb_global}/package.json:\n "editor"/"fileOpen": "none"`);
+    csl('$ ' + openCommand);
+    const { stderr, exitCode } = await $`${{ raw: openCommand }}`.nothrow();
     if (exitCode !== 0) {
         err(`Error opening recipe file:\n${stderr}`);
     }
@@ -120,7 +122,7 @@ export async function runByNumber(runRecipe: (recipeName: any, args?: string[]) 
         } else if (n < 1 || n > listR.length) {
             console.write('Number outside the list\n');
         } else {
-            let recipeName = listR[n - 1].split('/')[0].trim();
+            let recipeName = listR[n - 1].split('/', 1)[0].trim();
             if (recipeName === '<default>') {
                 await runRecipe(undefined);
             } else {
