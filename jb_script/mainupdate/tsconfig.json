@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "just_bun-asm": [
+        "C:/Users/vvsh/code/JS/Bun/just-bun/just_bun-asm/index.ts"
+      ]
+    }
+  }
+}

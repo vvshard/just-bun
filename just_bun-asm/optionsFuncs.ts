@@ -6,12 +6,12 @@ import { parseRecipes } from "./parseRecipes";
 export const csl = (msg: string) => console.log('◇ ' + msg.replaceAll('\n', '\n  '));
 /** Prints a message to the console with the appropriate label */
 export const err = (msg: string) => console.log('◆ ' + msg.replaceAll('\n', '\n  '));
-export const jb_global = path.dirname(Bun.main);
+export const jb_script = path.dirname(Bun.main);
 
 const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
 const jbGlob = new Glob(jbPattern + '.ts');
 const gitignoreGlob = new Glob('.gitignore');
-let filePackage = Bun.file(jb_global + '/package.json');
+let filePackage = Bun.file(jb_script + '/package.json');
 const package_json = !filePackage.size ? undefined : await filePackage.json();
 
 export function findPath(glob = jbGlob): string | undefined {
@@ -63,13 +63,13 @@ export async function installTypes() {
 }
 
 export async function mainupdate() {
-    const mainTs = jb_global + "/mainupdate/main.ts";
+    const mainTs = jb_script + "/mainupdate/main.ts";
     if (Bun.file(mainTs).size === 0)
         return err('Not found ' + mainTs);
     await $`
 bun i
 bun build ./main.ts --outdir ../ --target bun
-`.cwd(jb_global + "/mainupdate");
+`.cwd(jb_script + "/mainupdate");
 }
 
 export async function jbFromTemplate(tmplName = '_') {
@@ -79,14 +79,14 @@ export async function jbFromTemplate(tmplName = '_') {
         openInEditor(rcpFile);
     } else {
         const glob = new Glob(`templates-${jbPattern}/${tmplName}*.ts`);
-        const tmpltPath = glob.scanSync({ cwd: jb_global, dot: true, absolute: true }).next().value;
+        const tmpltPath = glob.scanSync({ cwd: jb_script, dot: true, absolute: true }).next().value;
         if (!tmpltPath)
             return err(`The template file matching the pattern "${tmplName}*.ts" was not found.`);
 
         csl(`Template found: ${tmpltPath}`);
         let text = await Bun.file(`${tmpltPath}`).text();
         text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g,
-            JSON.stringify(jb_global + '/funcs.ts') + ';');
+            JSON.stringify(jb_script + '/funcs.ts') + ';');
         const jbName = path.basename(path.dirname(tmpltPath)).slice(10) + '.ts';
         await Bun.write(jbName, text);
 
@@ -100,7 +100,7 @@ export async function openInEditor(file?: string) {
     const openCommand: string = (package_json?.editor?.fileOpen ?? 'code --goto %file%')
         .replace('%file%', `"${file}"`);
     if (openCommand === 'none')
-        return csl(`File opening disabled in ${jb_global}/package.json:\n "editor"/"fileOpen": "none"`);
+        return csl(`File opening disabled in ${jb_script}/package.json:\n "editor"/"fileOpen": "none"`);
     csl('$ ' + openCommand);
     const { stderr, exitCode } = await $`${{ raw: openCommand }}`.nothrow();
     if (exitCode !== 0) {

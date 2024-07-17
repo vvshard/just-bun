@@ -3,7 +3,7 @@ import { parseRecipes } from "./parseRecipes";
 import * as optFn from "./optionsFuncs";
 
 export async function start(args: string[]) {
-    let isGlob = false;
+    let isGlobal = false;
     let displayList: 'none' | 'show' | 'select' = 'none';
     let runnerPath: string | undefined;
 
@@ -18,20 +18,20 @@ export async function start(args: string[]) {
         case '-u':
             return optFn.mainupdate();
         case '-P':
-            return optFn.csl(`Path to global recipe file: ${optFn.jb_global}/just_bun.ts`);
+            return optFn.csl(`Path to global recipe file: ${optFn.jb_script}/just_bun.ts`);
         case '-p':
             return optFn.csl(`Path to recipe file: ${optFn.findPath() ?? 'Not found ↑'}`);
         case '-O':
-            return optFn.openInEditor(optFn.jb_global + '/just_bun.ts');
+            return optFn.openInEditor(optFn.jb_script + '/just_bun.ts');
         case '-o':
             return optFn.openInEditor(optFn.findPath());
         case '-L':
-            isGlob = true;
+            isGlobal = true;
         case '-l':
             displayList = 'show';
             break;
         case '-N':
-            isGlob = true;
+            isGlobal = true;
         case '-n':
             displayList = 'select';
             break;
@@ -45,10 +45,10 @@ export async function start(args: string[]) {
             break;
         case '-g':
             args.shift();
-            isGlob = true;
+            isGlobal = true;
     }
     if (!runnerPath) {
-        runnerPath = (isGlob ? optFn.jb_global + '/just_bun.ts' : optFn.findPath());
+        runnerPath = (isGlobal ? optFn.jb_script + '/just_bun.ts' : optFn.findPath());
         if (!runnerPath)
             return optFn.err('Not found ↑ recipe file');
     }

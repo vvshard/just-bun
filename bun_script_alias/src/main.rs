@@ -11,7 +11,7 @@ fn main() {
     let path_exe = path.to_str().expect("The exe file path is not Unicode").to_string();
     path.pop();
     path.pop();
-    path.push(&(file_stem + "_global"));
+    path.push(&(file_stem + "_script"));
     path.push("main.js");
 
     let mut args = env::args();
@@ -20,7 +20,7 @@ fn main() {
         Some(arg) => {
             if arg == "--help" {
                 println!(
-                    "Run {path_exe}:\n this in turn is only run:$ bun \"{}\" [...args]",
+                    "Run {path_exe} --help:\n description: This in turn is only run:$ bun \"{}\" [...args]",
                     path.to_str().unwrap()
                 );
             }

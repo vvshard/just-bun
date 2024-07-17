@@ -2,7 +2,7 @@
 // BunSell: https://bun.sh/docs/runtime/shell
 
 import { $ } from "bun";
-import { p$, csl, err } from "C:\\Users\\vvsh\\.bun\\j_global/funcs.ts";
+import { p$, csl, err } from "C:\\Users\\vvsh\\.bun\\j_script/funcs.ts";
 
 //----//////----//////----//////----//////----//////----//////----//////
 
