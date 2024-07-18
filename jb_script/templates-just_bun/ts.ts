@@ -10,7 +10,7 @@ import path from 'path';
 const main = __dirname + './src/index.ts';
 const outdir = __dirname + './out';
 
-export async function runRecipe(recipeName: string, args: string[] = []) {
+export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {
         case 'run':
         case 'r':

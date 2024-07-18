@@ -40,7 +40,7 @@ export async function start(args: string[]) {
             runnerPath = args.shift();
             if (!runnerPath)
                 return optFn.err('File path not passed');
-            if (!runnerPath.endsWith('.ts') || Bun.file(runnerPath).size === 0)
+            if (!runnerPath.endsWith('.ts') || !Bun.file(runnerPath).size)
                 return optFn.err('Incorrect file path');
             break;
         case '-g':
@@ -54,7 +54,9 @@ export async function start(args: string[]) {
     }
     const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
         = await import(path.resolve(runnerPath));
-
+    if(!isGlobal){
+        runnerPath = './' + path.relative(process.cwd(), runnerPath);
+    }
     if (!runRecipe)
         return optFn.err(`${runnerPath} does not contain export function runRecipe()`);
 

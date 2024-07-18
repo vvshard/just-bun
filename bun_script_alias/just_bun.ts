@@ -2,26 +2,26 @@
 // BunSell: https://bun.sh/docs/runtime/shell
 
 import { $ } from "bun";
-import { p$, csl, err } from "C:\\Users\\vvsh\\.bun\\j_script/funcs.ts";
 
-//----//////----//////----//////----//////----//////----//////----//////
-
-export async function runRecipe(recipeName: string, args = []) {
+export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {
+        case '# compiling in debug mode and running the program':
         case 'run':
         case 'r':
         case undefined: // default
-            await p$`cargo run`;
+            await $`cargo run`;
             break;
         case 'build_release':
         case 'b':
-            await p$`cargo build --release`;
+            await $`cargo build --release`;
+            await $`echo "Result in: ${__dirname}/target/release"`;
             break;
+        case '# run tests; args: [filter] [-1] // -1: in one thread':
         case 'test':
         case 't':
-            await p$`cargo test`;
+            await $`cargo test ${{raw: args.join(' ').replace('-1', '-- --test-threads=1')}}`;
             break;
         default:
-            return err(`recipeName error: '${recipeName}'`);
+            return console.log(`recipeName error: '${recipeName}'`);
     }
 }

@@ -6,7 +6,7 @@ import { p$, csl, err } from "../funcs.ts"
 
 //----//////----//////----//////----//////----//////----//////----//////
 
-export async function runRecipe(recipeName: string, args = []) {
+export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {
         case 'run':
         case 'r':
