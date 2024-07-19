@@ -8,8 +8,9 @@ import { p$, csl, err } from "./funcs.ts"
 
 export async function runRecipe(recipeName, args = []) {
     switch (recipeName) {
+        case '# msg about global file just_bun.ts':
         case undefined: // default
-            await $`echo 'Hello: **_global/just_bun.ts'`;
+            await $`echo 'Hello: This is the global file just_bun.ts'`;
             break;
         default:
             return err(`recipeName error: '${recipeName}'`);

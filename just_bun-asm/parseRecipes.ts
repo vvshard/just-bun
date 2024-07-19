@@ -1,54 +1,51 @@
 /** Returns a list of recipes based on the text of the function */
-export function parseRecipes(sfun: string): string {
-    let re = /\b(?:switch \(s*([^\)]+)s*\)|case ("([^"]*)"|void 0)\s*:|return[ ;]|break[ ;]|default[ :])/g;
+export function parseRecipes(fun: Function): string {
+    const re = /\b(?:switch \(([^\)]+)\)|case ("([^"]*)"|void 0):|return[ ;]|break;|default:)/g;
     let list = "";
     let alias = 0;
     let comment = "";
+    let state: 'START' | 'MAIN' | 'SKIP' | 'END' = 'START';
 
-    const fStart = (arr: RegExpExecArray) => {
-        if (arr[0] === 'switch' || arr[1] === 'runRecipe' )
-            stateF = fMain;
-    };
-    const fMain = (arr: RegExpExecArray) => {
-        switch (arr[0]) {
-            case 'case':
-                if (arr[3]?.startsWith('#')) {
-                    comment += arr[3];
-                } else {
-                    list += ['', ' / '][alias] ?? ' ';
-                    alias += 1;
-                    list += arr[2] === 'void 0' ? '<default>' : arr[3];
+    let arr: RegExpExecArray | null;
+    const sfun = fun.toString();
+    while ((arr = re.exec(sfun)) !== null && state !== 'END') {
+        const keyword = arr[0].split(/[ ;:]/, 1)[0];
+        switch (state) {
+            case 'START':
+                if (keyword === 'switch' && arr[1] === 'recipeName')
+                    state = 'MAIN';
+                break;
+
+            case 'MAIN':
+                switch (keyword) {
+                    case 'case':
+                        if (arr[3]?.startsWith('#')) {
+                            comment += ' ' + arr[3];
+                        } else {
+                            list += (['', ' / '][alias] ?? ' ') + (arr[3] ?? '<default>');
+                            alias += 1;
+                        }
+                        break;
+                    case 'break':
+                    case 'return':
+                        list += comment + '\n';
+                        alias = 0;
+                        comment = "";
+                        break;
+                    case 'default':
+                        state = 'END';
+                        break;
+                    case 'switch':
+                        state = 'SKIP';
+                        break;
+                    default:
                 }
                 break;
-            case 'break':
-            case 'return':
-                list += ` ${comment}\n`;
-                alias = 0;
-                comment = "";
-                break;
-            case 'default':
-                stateF = null;
-                break;
-            case 'switch':
-                stateF = fSkip;
-                break;
-            default:
-                break;
+
+            case 'SKIP':
+                if (keyword === 'default')
+                    state = 'MAIN';
         }
-    };
-    const fSkip = (arr: RegExpExecArray) => {
-        if (arr[0] === 'default')
-            stateF = fMain;
-    };
-
-    let stateF: ((arr: RegExpExecArray) => void) | null = fStart;
-    let arr: RegExpExecArray | null;
-    while ((arr = re.exec(sfun)) !== null && stateF !== null) {
-        // console.log(`arr[0]= ${arr[0]}`);
-        arr[0] = arr[0].split(/[ ;:]/, 1)[0];
-        // let a = arr[0].split(/ ["\(]|[\);: "]/);
-        stateF(arr);
     }
-
     return list.trim();
 }

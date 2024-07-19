@@ -3,10 +3,8 @@ import { parseRecipes } from "./parseRecipes";
 import * as optFn from "./optionsFuncs";
 
 export async function start(args: string[]) {
-    let isGlobal = false;
-    let displayList: 'none' | 'show' | 'select' = 'none';
+    let displayList: 'show' | 'select' | undefined;
     let runnerPath: string | undefined;
-
     switch (args[0]) {
         case '--help':
         case '-h':
@@ -18,55 +16,65 @@ export async function start(args: string[]) {
         case '-u':
             return optFn.mainupdate();
         case '-P':
-            return optFn.csl(`Path to global recipe file: ${optFn.jb_script}/just_bun.ts`);
+            return optFn.csl(`Path to global recipe file: ${optFn.globalJB}`);
         case '-p':
             return optFn.csl(`Path to recipe file: ${optFn.findPath() ?? 'Not found ↑'}`);
         case '-O':
-            return optFn.openInEditor(optFn.jb_script + '/just_bun.ts');
+            return optFn.openInEditor(optFn.globalJB);
         case '-o':
             return optFn.openInEditor(optFn.findPath());
+        //@ts-ignore
         case '-L':
-            isGlobal = true;
+            runnerPath = optFn.globalJB;
         case '-l':
             displayList = 'show';
             break;
+        //@ts-ignore
         case '-N':
-            isGlobal = true;
+            runnerPath = optFn.globalJB;
         case '-n':
             displayList = 'select';
             break;
+        //@ts-ignore
+        case '-nf':
+            displayList = 'select';
         case '-f':
             args.shift();
             runnerPath = args.shift();
             if (!runnerPath)
                 return optFn.err('File path not passed');
-            if (!runnerPath.endsWith('.ts') || !Bun.file(runnerPath).size)
+            if (!runnerPath.endsWith('.ts'))
                 return optFn.err('Incorrect file path');
             break;
         case '-g':
             args.shift();
-            isGlobal = true;
+            runnerPath = optFn.globalJB;
+            break;
+        default:
     }
+    let reportPath = runnerPath;
     if (!runnerPath) {
-        runnerPath = (isGlobal ? optFn.jb_script + '/just_bun.ts' : optFn.findPath());
+        runnerPath = optFn.findPath();
         if (!runnerPath)
             return optFn.err('Not found ↑ recipe file');
+        reportPath = './' + path.relative(process.cwd(), runnerPath);
+    } else {
+        if (!Bun.file(runnerPath).size)
+            return optFn.err(`Not found ${runnerPath}`);
     }
-    const { runRecipe }: { runRecipe: (recipeName: any, args?: string[]) => Promise<any> }
+    const { runRecipe }: { runRecipe: (recipeName?: string, args?: string[]) => any }
         = await import(path.resolve(runnerPath));
-    if(!isGlobal){
-        runnerPath = './' + path.relative(process.cwd(), runnerPath);
-    }
     if (!runRecipe)
-        return optFn.err(`${runnerPath} does not contain export function runRecipe()`);
+        return optFn.err(`${reportPath} does not contain export function runRecipe()`);
 
-    if (displayList === 'show')
-        return optFn.csl(`List of recipes in ${runnerPath}:\n${parseRecipes(runRecipe.toString())}`);
-
-    if (displayList === 'select')
-        return optFn.runByNumber(runRecipe);
-
-    await runRecipe(args.shift(), args);
+    switch (displayList) {
+        case undefined:
+            return await runRecipe(args.shift(), args);
+        case 'select':
+            return await optFn.runByNumber(runRecipe);
+        case 'show':
+            optFn.csl(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
+    }
 }
 
 function printHelp() {

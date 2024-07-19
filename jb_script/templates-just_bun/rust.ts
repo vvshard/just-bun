@@ -16,10 +16,12 @@ export async function runRecipe(recipeName?: string, args = []) {
         case 'build_release':
         case 'b':
             await p$`cargo build --release`;
+            csl(`Result in: ${__dirname}/target/release`);
             break;
         case 'test':
+        case '# args: [filter] [-1] // -1: in one thread':
         case 't':
-            await p$`cargo test`;
+            await p$`cargo test ${{ raw: args.join(' ').replace('-1', '-- --test-threads=1') }}`;
             break;
         default:
             return err(`recipeName error: '${recipeName}'`);

@@ -2,9 +2,9 @@
 
 import { $ } from "bun"
 
-/** Prints a message to the console with the appropriate label */
+/** Prints msg to the console with the appropriate label */
 export const csl = (msg: string) => console.log('◇ ' + msg.replaceAll('\n', '\n  '));
-/** Prints a message to the console with the appropriate label */
+/** Prints msg to the console with the appropriate label */
 export const err = (msg: string) => console.log('◆ ' + msg.replaceAll('\n', '\n  '));
 
 /** Prints the interpolated command to the console before executing it in $'...' */

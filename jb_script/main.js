@@ -3,45 +3,50 @@
 import path2 from "path";
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/parseRecipes.ts
-function parseRecipes(sfun) {
-  let re = /\b(?:switch\s*\([^\)]+\)|case\s*(?:"[^"]*|void 0)"?\s*:|return\s*|break\s*;|default\s*:)/g;
+function parseRecipes(fun) {
+  const re = /\b(?:switch \(s*([^\)]+)s*\)|case ("([^"]*)"|void 0)\s*:|return[ ;]|break[ ;]|default[ :])/g;
   let list = "";
   let alias = 0;
-  const fStart = (a) => {
-    if (a[0] === "switch")
-      stateF = fMain;
-  };
-  const fMain = (a) => {
-    switch (a[0]) {
-      case "case":
-        list += ["", " / "][alias] ?? " ";
-        alias += 1;
-        list += a[1] === "void" && a[2] === "0" ? "<default>" : a[1];
-        break;
-      case "break":
-      case "return":
-        list += "\n";
-        alias = 0;
-        break;
-      case "default":
-        stateF = null;
-        break;
-      case "switch":
-        stateF = fSkip;
-        break;
-      default:
-        break;
-    }
-  };
-  const fSkip = (a) => {
-    if (a[0] === "default")
-      stateF = fMain;
-  };
-  let stateF = fStart;
+  let comment = "";
+  let state = "START";
   let arr;
-  while ((arr = re.exec(sfun)) !== null && stateF !== null) {
-    let a = arr[0].split(/ ["\(]|[\);: "]/);
-    stateF(a);
+  const sfun = fun.toString();
+  while ((arr = re.exec(sfun)) !== null && state !== "END") {
+    const keyword = arr[0].split(/[ ;:]/, 1)[0];
+    switch (state) {
+      case "START":
+        if (keyword === "switch" && arr[1] === "recipeName")
+          state = "MAIN";
+        break;
+      case "MAIN":
+        switch (keyword) {
+          case "case":
+            if (arr[3]?.startsWith("#")) {
+              comment += " " + arr[3];
+            } else {
+              list += (["", " / "][alias] ?? " ") + (arr[3] ?? "<default>");
+              alias += 1;
+            }
+            break;
+          case "break":
+          case "return":
+            list += comment + "\n";
+            alias = 0;
+            comment = "";
+            break;
+          case "default":
+            state = "END";
+            break;
+          case "switch":
+            state = "SKIP";
+            break;
+          default:
+        }
+        break;
+      case "SKIP":
+        if (keyword === "default")
+          state = "MAIN";
+    }
   }
   return list.trim();
 }
@@ -93,13 +98,13 @@ async function installTypes() {
   }
 }
 async function mainupdate() {
-  const mainTs = jb_script + "/mainupdate/main.ts";
+  const mainTs = mainDir + "/mainupdate/main.ts";
   if (Bun.file(mainTs).size === 0)
     return err("Not found " + mainTs);
   await $`
 bun i
 bun build ./main.ts --outdir ../ --target bun
-`.cwd(jb_script + "/mainupdate");
+`.cwd(mainDir + "/mainupdate");
 }
 async function jbFromTemplate(tmplName = "_") {
   const rcpFile = jbGlob.scanSync({ dot: true }).next().value;
@@ -108,12 +113,12 @@ async function jbFromTemplate(tmplName = "_") {
     openInEditor(rcpFile);
   } else {
     const glob = new Glob(`templates-${jbPattern}/${tmplName}*.ts`);
-    const tmpltPath = glob.scanSync({ cwd: jb_script, dot: true, absolute: true }).next().value;
+    const tmpltPath = glob.scanSync({ cwd: mainDir, dot: true, absolute: true }).next().value;
     if (!tmpltPath)
       return err(`The template file matching the pattern "${tmplName}*.ts" was not found.`);
     csl(`Template found: ${tmpltPath}`);
     let text = await Bun.file(`${tmpltPath}`).text();
-    text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g, JSON.stringify(jb_script + "/funcs.ts") + ";");
+    text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g, JSON.stringify(mainDir + "/funcs.ts") + ";");
     const jbName = path.basename(path.dirname(tmpltPath)).slice(10) + ".ts";
     await Bun.write(jbName, text);
     await openInEditor(jbName);
@@ -122,17 +127,19 @@ async function jbFromTemplate(tmplName = "_") {
 async function openInEditor(file) {
   if (!file)
     return err("Not found recipe file");
-  const openCommand = (package_json?.editor?.fileOpen ?? "code --goto %file%").replace("%file%", `"${file}"`);
+  const openCommand = (settings?.editor?.fileOpen ?? "code --goto %file%").replace("%file%", `"${file}"`);
+  if (settings?.editor?.fileOpenReport) {
+    csl(openCommand !== "none" ? "$ " + openCommand : `File opening disabled in ${mainDir}/settings.json:\n "editor"/"fileOpen": "none"`);
+  }
   if (openCommand === "none")
-    return csl(`File opening disabled in ${jb_script}/package.json:\n "editor"/"fileOpen": "none"`);
-  csl("$ " + openCommand);
+    return;
   const { stderr, exitCode } = await $`${{ raw: openCommand }}`.nothrow();
   if (exitCode !== 0) {
     err(`Error opening recipe file:\n${stderr}`);
   }
 }
 async function runByNumber(runRecipe) {
-  const listR = parseRecipes(runRecipe.toString()).split("\n");
+  const listR = parseRecipes(runRecipe).split("\n");
   csl("Enter the recipe number and, if necessary, arguments:\n" + listR.map((s, i) => `${i + 1}. ${s}`).join("\n"));
   for await (const line of console) {
     if (!line)
@@ -144,7 +151,7 @@ async function runByNumber(runRecipe) {
     } else if (n < 1 || n > listR.length) {
       console.write("Number outside the list\n");
     } else {
-      let recipeName = listR[n - 1].split("/", 1)[0].trim();
+      let recipeName = listR[n - 1].split(" ", 1)[0];
       if (recipeName === "<default>") {
         await runRecipe(undefined);
       } else {
@@ -156,17 +163,17 @@ async function runByNumber(runRecipe) {
 }
 var csl = (msg) => console.log("\u25C7 " + msg.replaceAll("\n", "\n  "));
 var err = (msg) => console.log("\u25C6 " + msg.replaceAll("\n", "\n  "));
-var jb_script = path.dirname(Bun.main);
+var mainDir = path.dirname(Bun.main);
+var globalJB = mainDir + "/just_bun.ts";
 var jbPattern = "{.,}[jJ][uU][sS][tT]_[bB][uU][nN]";
 var jbGlob = new Glob(jbPattern + ".ts");
 var gitignoreGlob = new Glob(".gitignore");
-var filePackage = Bun.file(jb_script + "/package.json");
-var package_json = !filePackage.size ? undefined : await filePackage.json();
+var fileSettings = Bun.file(mainDir + "/settings.json");
+var settings = !fileSettings.size ? undefined : await fileSettings.json();
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
 async function start(args) {
-  let isGlobal = false;
-  let displayList = "none";
+  let displayList;
   let runnerPath;
   switch (args[0]) {
     case "--help":
@@ -179,48 +186,60 @@ async function start(args) {
     case "-u":
       return mainupdate();
     case "-P":
-      return csl(`Path to global recipe file: ${jb_script}/just_bun.ts`);
+      return csl(`Path to global recipe file: ${globalJB}`);
     case "-p":
       return csl(`Path to recipe file: ${findPath() ?? "Not found \u2191"}`);
     case "-O":
-      return openInEditor(jb_script + "/just_bun.ts");
+      return openInEditor(globalJB);
     case "-o":
       return openInEditor(findPath());
     case "-L":
-      isGlobal = true;
+      runnerPath = globalJB;
     case "-l":
       displayList = "show";
       break;
     case "-N":
-      isGlobal = true;
+      runnerPath = globalJB;
     case "-n":
       displayList = "select";
       break;
+    case "-nf":
+      displayList = "select";
     case "-f":
       args.shift();
       runnerPath = args.shift();
       if (!runnerPath)
         return err("File path not passed");
-      if (!runnerPath.endsWith(".ts") || Bun.file(runnerPath).size === 0)
+      if (!runnerPath.endsWith(".ts"))
         return err("Incorrect file path");
       break;
     case "-g":
       args.shift();
-      isGlobal = true;
+      runnerPath = globalJB;
+      break;
+    default:
   }
+  let reportPath = runnerPath;
   if (!runnerPath) {
-    runnerPath = isGlobal ? jb_script + "/just_bun.ts" : findPath();
+    runnerPath = findPath();
     if (!runnerPath)
       return err("Not found \u2191 recipe file");
+    reportPath = "./" + path2.relative(process.cwd(), runnerPath);
+  } else {
+    if (!Bun.file(runnerPath).size)
+      return err(`Not found ${runnerPath}`);
   }
   const { runRecipe } = await import(path2.resolve(runnerPath));
   if (!runRecipe)
-    return err(`${runnerPath} does not contain export function runRecipe()`);
-  if (displayList === "show")
-    return csl(`List of recipes in ${runnerPath}:\n${parseRecipes(runRecipe.toString())}`);
-  if (displayList === "select")
-    return runByNumber(runRecipe);
-  await runRecipe(args.shift(), args);
+    return err(`${reportPath} does not contain export function runRecipe()`);
+  switch (displayList) {
+    case undefined:
+      return await runRecipe(args.shift(), args);
+    case "select":
+      return await runByNumber(runRecipe);
+    case "show":
+      csl(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
+  }
 }
 var printHelp = function() {
   csl("Help3");

@@ -1,0 +1,6 @@
+{
+  "editor": {
+    "fileOpen": "code --goto %file%",
+    "fileOpenReport": false
+  }
+}
