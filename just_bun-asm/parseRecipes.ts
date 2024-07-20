@@ -1,50 +1,71 @@
 /** Returns a list of recipes based on the text of the function */
 export function parseRecipes(fun: Function): string {
-    const re = /\b(?:switch \(([^\)]+)\)|case ("([^"]*)"|void 0):|return[ ;]|break;|default:)/g;
+    const re = /\b(?<word>switch \(recipeName\) \{|case (["'](?<name>[^"']*)["']|void 0):|return[ ;]|break;)|(?<!\\)(?<token>\$\{|['"`\{}])/g;
     let list = "";
     let alias = 0;
     let comment = "";
-    let state: 'START' | 'MAIN' | 'SKIP' | 'END' = 'START';
+    type State = 'START' | 'MAIN' | '`' | '\'' | '"' | '{';
+    let stack: State[] = ['START'];
 
-    let arr: RegExpExecArray | null;
-    const sfun = fun.toString();
-    while ((arr = re.exec(sfun)) !== null && state !== 'END') {
-        const keyword = arr[0].split(/[ ;:]/, 1)[0];
+    const matches = fun.toString().matchAll(re);
+    for (const match of matches) {
+        const state = stack.at(-1)!;
+        const { word, name, token: token0 } = match.groups!;
+        const token = token0 ?? word.split(/[ ;:]/, 1)[0];
         switch (state) {
             case 'START':
-                if (keyword === 'switch' && arr[1] === 'recipeName')
-                    state = 'MAIN';
+                if (token === 'switch')
+                    stack.push('MAIN');
                 break;
 
             case 'MAIN':
-                switch (keyword) {
+                switch (token) {
                     case 'case':
-                        if (arr[3]?.startsWith('#')) {
-                            comment += ' ' + arr[3];
+                        if (name?.startsWith('#')) {
+                            comment += ' ' + name;
                         } else {
-                            list += (['', ' / '][alias] ?? ' ') + (arr[3] ?? '<default>');
+                            list += (['', ' / '][alias] ?? ' ') + (name ?? '<default>');
                             alias += 1;
                         }
                         break;
                     case 'break':
                     case 'return':
-                        list += comment + '\n';
-                        alias = 0;
+                    case '}':
+                        if (alias) {
+                            list += comment ? JSON.parse(`"${comment}"`) + '\n' : '\n';
+                            alias = 0;
+                        }
                         comment = "";
-                        break;
-                    case 'default':
-                        state = 'END';
+                        if (token === '}')
+                            return list.trim();
                         break;
                     case 'switch':
-                        state = 'SKIP';
+                        stack.push('{');
                         break;
                     default:
+                        stack.push(token as State);
                 }
                 break;
 
-            case 'SKIP':
-                if (keyword === 'default')
-                    state = 'MAIN';
+            //@ts-ignore
+            case '`':
+                if (token === '${') {
+                    stack.push('{');
+                    break;
+                }
+            case '\'':
+            case '"':
+                if (token === state) {
+                    stack.pop();
+                }
+                break;
+            case '{':
+                if (token === '}') {
+                    stack.pop();
+                } else if ('`\'"'.includes(token)) {
+                    stack.push(token as State);
+                }
+                break;
         }
     }
     return list.trim();

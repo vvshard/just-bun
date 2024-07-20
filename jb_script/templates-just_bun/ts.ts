@@ -21,15 +21,16 @@ export async function runRecipe(recipeName?: string, args = []) {
         case 'b':
             await p$`bun build ${main} --outdir ${outdir}`;
             break;
-        case 'buildU': // decode \uXXXX
+        case 'buildU': 
+        case '# decode \\uXXXX':
         case 'u':
             buildAndDecode_uXXXX();
             break;
-        case 'buildW':
+        case 'build_watch':
         case 'w':
             await p$`bun --watch build ${main} --outdir ${outdir}`;
             break;
-        case 'buildTB': // target bun
+        case 'build_target_bun':
         case 'tb':
             await p$`bun build ${main} --outdir ${outdir} --target bun`;
             break;

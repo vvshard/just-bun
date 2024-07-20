@@ -4,48 +4,67 @@ import path2 from "path";
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/parseRecipes.ts
 function parseRecipes(fun) {
-  const re = /\b(?:switch \(s*([^\)]+)s*\)|case ("([^"]*)"|void 0)\s*:|return[ ;]|break[ ;]|default[ :])/g;
+  const re = /\b(?<word>switch \(recipeName\) \{|case (["'](?<name>[^"']*)["']|void 0):|return[ ;]|break;)|(?<!\\)(?<token>\$\{|['"`\{}])/g;
   let list = "";
   let alias = 0;
   let comment = "";
-  let state = "START";
-  let arr;
-  const sfun = fun.toString();
-  while ((arr = re.exec(sfun)) !== null && state !== "END") {
-    const keyword = arr[0].split(/[ ;:]/, 1)[0];
+  let stack = ["START"];
+  const matches = fun.toString().matchAll(re);
+  for (const match of matches) {
+    const state = stack.at(-1);
+    const { word, name, token: token0 } = match.groups;
+    const token = token0 ?? word.split(/[ ;:]/, 1)[0];
     switch (state) {
       case "START":
-        if (keyword === "switch" && arr[1] === "recipeName")
-          state = "MAIN";
+        if (token === "switch")
+          stack.push("MAIN");
         break;
       case "MAIN":
-        switch (keyword) {
+        switch (token) {
           case "case":
-            if (arr[3]?.startsWith("#")) {
-              comment += " " + arr[3];
+            if (name?.startsWith("#")) {
+              comment += " " + name;
             } else {
-              list += (["", " / "][alias] ?? " ") + (arr[3] ?? "<default>");
+              list += (["", " / "][alias] ?? " ") + (name ?? "<default>");
               alias += 1;
             }
             break;
           case "break":
           case "return":
-            list += comment + "\n";
-            alias = 0;
+          case "}":
+            if (alias) {
+              list += comment ? JSON.parse(`"${comment}"`) + "\n" : "\n";
+              alias = 0;
+            }
             comment = "";
-            break;
-          case "default":
-            state = "END";
+            if (token === "}")
+              return list.trim();
             break;
           case "switch":
-            state = "SKIP";
+            stack.push("{");
             break;
           default:
+            stack.push(token);
         }
         break;
-      case "SKIP":
-        if (keyword === "default")
-          state = "MAIN";
+      case "`":
+        if (token === "${") {
+          stack.push("{");
+          break;
+        }
+      case "\'":
+      case '"':
+        if (token === state) {
+          stack.pop();
+        }
+        break;
+      case "{":
+        if (token === "}") {
+          stack.pop();
+        } else if ('`\'"'.includes(token)) {
+          stack.push(token);
+        }
+        break;
     }
   }
   return list.trim();
