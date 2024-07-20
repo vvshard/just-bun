@@ -50,8 +50,8 @@ export async function runRecipe(recipeName?: string, args = []) {
 Если вам удобнее, имя файла рецептов может иметь спереди точку и любой регистр букв до расширения. 
 Например, Just_Bun.ts и .JUST_BUN.ts являются допустимыми именами.
 
-Подробнее [oб ограничениях синтаксиса  function runRecipe() - здесь](#ограничения-синтаксиса-function-runrecipe).   
-Подробнее [о ситнтаксисе и работе с Bun Shell - здесь](https://bun.sh/docs/runtime/shell). 
+Подробнее [oб ограничениях синтаксиса  function runRecipe()](#ограничения-синтаксиса-function-runrecipe).   
+Подробнее [о ситнтаксисе и работе с Bun Shell](https://bun.sh/docs/runtime/shell). 
 
 ## Установка
 

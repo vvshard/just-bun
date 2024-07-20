@@ -4,7 +4,8 @@ import path2 from "path";
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/parseRecipes.ts
 function parseRecipes(fun) {
-  const re = /\b(?<word>switch \(recipeName\) \{|case (["'](?<name>[^"']*)["']|void 0):|return[ ;]|break;)|(?<!\\)(?<token>\$\{|['"`\{}])/g;
+  const rs = String.raw`\b(?<word>case ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):` + String.raw`|switch \(recipeName\) \{|break\b|return\b)|(?<!\\)(?<token>\$\{|[\`'"\{}])`;
+  const re = RegExp(rs, "g");
   let list = "";
   let alias = 0;
   let comment = "";
@@ -12,8 +13,9 @@ function parseRecipes(fun) {
   const matches = fun.toString().matchAll(re);
   for (const match of matches) {
     const state = stack.at(-1);
-    const { word, name, token: token0 } = match.groups;
-    const token = token0 ?? word.split(/[ ;:]/, 1)[0];
+    const { word, name1, name2, token: token0 } = match.groups;
+    const name = name1 ?? name2;
+    const token = token0 ?? word.split(" ", 1)[0];
     switch (state) {
       case "START":
         if (token === "switch")
@@ -33,12 +35,12 @@ function parseRecipes(fun) {
           case "return":
           case "}":
             if (alias) {
-              list += comment ? JSON.parse(`"${comment}"`) + "\n" : "\n";
+              list += comment ? JSON.parse(`"${comment.replaceAll('"', '\\"')}"`) + "\n" : "\n";
               alias = 0;
             }
-            comment = "";
             if (token === "}")
               return list.trim();
+            comment = "";
             break;
           case "switch":
             stack.push("{");
