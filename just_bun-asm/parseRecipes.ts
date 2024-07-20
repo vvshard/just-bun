@@ -1,6 +1,6 @@
 /** Returns a list of recipes based on the text of the function */
 export function parseRecipes(fun: Function): string {
-    const re = /\b(?<word>switch \(recipeName\) \{|case (["'](?<name>[^"']*)["']|void 0):|return[ ;]|break;)|(?<!\\)(?<token>\$\{|['"`\{}])/g;
+    const re = /\b(?<word>switch \(recipeName\) \{|case ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|return[ ;]|break;)|(?<!\\)(?<token>\$\{|['"`\{}])/g;
     let list = "";
     let alias = 0;
     let comment = "";
@@ -10,7 +10,8 @@ export function parseRecipes(fun: Function): string {
     const matches = fun.toString().matchAll(re);
     for (const match of matches) {
         const state = stack.at(-1)!;
-        const { word, name, token: token0 } = match.groups!;
+        const { word, name1, name2, token: token0 } = match.groups!;
+        const name = name1 ?? name2;
         const token = token0 ?? word.split(/[ ;:]/, 1)[0];
         switch (state) {
             case 'START':
@@ -32,7 +33,7 @@ export function parseRecipes(fun: Function): string {
                     case 'return':
                     case '}':
                         if (alias) {
-                            list += comment ? JSON.parse(`"${comment}"`) + '\n' : '\n';
+                            list += comment ? JSON.parse(`"${comment.replaceAll('"', '\\"')}"`) + '\n' : '\n';
                             alias = 0;
                         }
                         comment = "";
