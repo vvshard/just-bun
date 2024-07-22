@@ -17,7 +17,6 @@ import { $ } from "bun";
 export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {
         case 'run': // recipeName
-        case '# compiling in debug mode and running the program': // comment for list
         case 'r': // recipeName alias
         case undefined: // default: for run without recipeName
             await $`cargo run`;
@@ -40,9 +39,9 @@ export async function runRecipe(recipeName?: string, args = []) {
 Теперь в рабочем каталоге содержащем этот just_bun.ts или его дочернем, команда в терминале `jb -l` выведет:
 ```
 ◇ List of recipes in ./just_bun.ts:
-  run / r <default> # compiling in debug mode and running the program
-  build_release / b 
-  test / t # args: [<filter>] [-1] // -1: in one thread
+  run / r <default>
+  build_release / b
+  test / t # args: [filter] [-nThreads] // e.g.: -1 - in one thread
 ```
 Команда `jb run` или `jb r` или просто `jb` выполнит: `cargo run`.  
 Команда `jb t add -1` выполнит: `cargo test add -- --test-threads=1`.
@@ -176,7 +175,7 @@ main.js - единственный необходимый для обслужи�
 
 ## Работа с sh / bash - утилитами
 
-Для полной кросс-платформенной совместимости [Bun Shell реализует набор встроенных команд с именами популярных sh / bash - утилит](https://bun.sh/docs/runtime/shell#builtin-commands). Однако пока, не все они  полностью поддерживают все флаги и опции утилит.   
+Для полной кросс-платформенной совместимости [Bun Shell реализует набор встроенных команд с именами популярных sh / bash - утилит](https://bun.sh/docs/runtime/shell#builtin-commands). Однако пока, не все они полностью поддерживают все флаги и опции утилит.   
 Лучший способ, при необходимости, вызывать из Bun Shell именно утилиту, а не встроенную команду - создать 
 в funcs.ts экспортируемую константу, например с именем "SH" с абсолютным путём 
 к расположению ваших sh / bash - утилит (например, в Windows, это обычно "C:\Program Files\Git\usr\bin\\"). 

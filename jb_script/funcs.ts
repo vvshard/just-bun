@@ -2,14 +2,14 @@
 
 import { $ } from "bun"
 
-/** Prints msg to the console with the appropriate label */
-export const csl = (msg: string) => console.log('◇ ' + msg.replaceAll('\n', '\n  '));
-/** Prints msg to the console with the appropriate label */
-export const err = (msg: string) => console.log('◆ ' + msg.replaceAll('\n', '\n  '));
+/** Prints message to the console with the appropriate label */
+export const msg = (message: string) => console.log('◇ ' + message.replaceAll('\n', '\n  '));
+/** Prints message to the console with the appropriate label */
+export const err = (message: string) => console.log('◆ ' + message.replaceAll('\n', '\n  '));
 
 /** Prints the interpolated command to the console before executing it in $'...' */
 export function p$(strings: TemplateStringsArray, ...expressions) {
-    csl(expressions.reduce((a: string, exp, i) => a + (
+    msg(expressions.reduce((a: string, exp, i) => a + (
         typeof exp === 'string' ? /\s/.test(exp) && !'\'"'.includes(exp[0]) ? `"${exp}"` : exp
             : typeof exp === 'number' ? exp.toString()
                 : exp && 'raw' in exp ? exp.raw
@@ -25,5 +25,3 @@ export function decode_uXXXX(str: string) {
     return str.split('\n').map(s => !ru.test(s) ? s
         : JSON.parse(`"${s.replace(re, '\\$&')}"`)).join('\n');
 }
-
-

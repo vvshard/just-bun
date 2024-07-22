@@ -4,23 +4,22 @@ import path2 from "path";
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/parseRecipes.ts
 function parseRecipes(fun) {
-  const rs = String.raw`\b(?<word>case ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):` + String.raw`|switch \(recipeName\) \{|break\b|return\b)|(?<!\\)(?<token>\$\{|[\`'"\{}])`;
-  const re = RegExp(rs, "g");
+  const sfun = fun.toString();
+  const iSwitch = sfun.search(/\bswitch \(recipeName\) \{/);
+  if (iSwitch === -1)
+    throw 'The function passed to parseRecipes() does not contain a "switch (recipeName) {" statement.';
+  const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|\bbreak\b|\breturn\b|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
+  const stack = ["MAIN"];
   let list = "";
   let alias = 0;
   let comment = "";
-  let stack = ["START"];
-  const matches = fun.toString().matchAll(re);
+  const matches = sfun.slice(iSwitch + 21).matchAll(re);
   for (const match of matches) {
-    const state = stack.at(-1);
-    const { word, name1, name2, token: token0 } = match.groups;
+    const { case_, name1, name2, token: token0 } = match.groups;
+    const token = token0 ?? case_ ?? "break_return";
     const name = name1 ?? name2;
-    const token = token0 ?? word.split(" ", 1)[0];
+    const state = stack.at(-1);
     switch (state) {
-      case "START":
-        if (token === "switch")
-          stack.push("MAIN");
-        break;
       case "MAIN":
         switch (token) {
           case "case":
@@ -31,19 +30,15 @@ function parseRecipes(fun) {
               alias += 1;
             }
             break;
-          case "break":
-          case "return":
+          case "break_return":
           case "}":
             if (alias) {
-              list += comment ? JSON.parse(`"${comment.replaceAll('"', '\\"')}"`) + "\n" : "\n";
+              list += (comment ? JSON.parse(`"${comment.replaceAll('"', '\\"')}"`) : "") + "\n";
               alias = 0;
             }
             if (token === "}")
-              return list.trim();
+              return list.trimEnd();
             comment = "";
-            break;
-          case "switch":
-            stack.push("{");
             break;
           default:
             stack.push(token);
@@ -63,13 +58,12 @@ function parseRecipes(fun) {
       case "{":
         if (token === "}") {
           stack.pop();
-        } else if ('`\'"'.includes(token)) {
+        } else if (token === token0) {
           stack.push(token);
         }
-        break;
     }
   }
-  return list.trim();
+  return list.trimEnd();
 }
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/optionsFuncs.ts
@@ -94,7 +88,7 @@ async function installTypes() {
   }
   let no_gitignore = !Bun.file("./package.json").size;
   if (no_gitignore) {
-    csl("$ bun add @types/bun --no-save");
+    msg("$ bun add @types/bun --no-save");
     await $`bun add @types/bun --no-save`;
     if (Bun.file("./package.json").size) {
       await $`rm package.json`;
@@ -114,7 +108,7 @@ async function installTypes() {
       await Bun.write("./.gitignore", "node_modules/");
     }
   } else {
-    csl("bun add @types/bun -d");
+    msg("bun add @types/bun -d");
     await $`bun add @types/bun -d`;
   }
 }
@@ -137,7 +131,7 @@ async function jbFromTemplate(tmplName = "_") {
     const tmpltPath = glob.scanSync({ cwd: mainDir, dot: true, absolute: true }).next().value;
     if (!tmpltPath)
       return err(`The template file matching the pattern "${tmplName}*.ts" was not found.`);
-    csl(`Template found: ${tmpltPath}`);
+    msg(`Template found: ${tmpltPath}`);
     let text = await Bun.file(`${tmpltPath}`).text();
     text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g, JSON.stringify(mainDir + "/funcs.ts") + ";");
     const jbName = path.basename(path.dirname(tmpltPath)).slice(10) + ".ts";
@@ -150,7 +144,7 @@ async function openInEditor(file) {
     return err("Not found recipe file");
   const openCommand = (settings?.editor?.fileOpen ?? "code --goto %file%").replace("%file%", `"${file}"`);
   if (settings?.editor?.fileOpenReport) {
-    csl(openCommand !== "none" ? "$ " + openCommand : `File opening disabled in ${mainDir}/settings.json:\n "editor"/"fileOpen": "none"`);
+    msg(openCommand !== "none" ? "$ " + openCommand : `File opening disabled in ${mainDir}/settings.json:\n "editor"/"fileOpen": "none"`);
   }
   if (openCommand === "none")
     return;
@@ -161,10 +155,10 @@ async function openInEditor(file) {
 }
 async function runByNumber(runRecipe) {
   const listR = parseRecipes(runRecipe).split("\n");
-  csl("Enter the recipe number and, if necessary, arguments:\n" + listR.map((s, i) => `${i + 1}. ${s}`).join("\n"));
+  msg("Enter the recipe number and, if necessary, arguments:\n" + listR.map((s, i) => `${i + 1}. ${s}`).join("\n"));
   for await (const line of console) {
     if (!line)
-      return csl("Reset");
+      return msg("Reset");
     const args = line.split(" ");
     const n = Math.floor(Number(args.shift()));
     if (isNaN(n)) {
@@ -182,8 +176,8 @@ async function runByNumber(runRecipe) {
     }
   }
 }
-var csl = (msg) => console.log("\u25C7 " + msg.replaceAll("\n", "\n  "));
-var err = (msg) => console.log("\u25C6 " + msg.replaceAll("\n", "\n  "));
+var msg = (message) => console.log("\u25C7 " + message.replaceAll("\n", "\n  "));
+var err = (message) => console.log("\u25C6 " + message.replaceAll("\n", "\n  "));
 var mainDir = path.dirname(Bun.main);
 var globalJB = mainDir + "/just_bun.ts";
 var jbPattern = "{.,}[jJ][uU][sS][tT]_[bB][uU][nN]";
@@ -207,9 +201,9 @@ async function start(args) {
     case "-u":
       return mainupdate();
     case "-P":
-      return csl(`Path to global recipe file: ${globalJB}`);
+      return msg(`Path to global recipe file: ${globalJB}`);
     case "-p":
-      return csl(`Path to recipe file: ${findPath() ?? "Not found \u2191"}`);
+      return msg(`Path to recipe file: ${findPath() ?? "Not found \u2191"}`);
     case "-O":
       return openInEditor(globalJB);
     case "-o":
@@ -259,11 +253,11 @@ async function start(args) {
     case "select":
       return await runByNumber(runRecipe);
     case "show":
-      csl(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
+      msg(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
   }
 }
 var printHelp = function() {
-  csl("Help3");
+  msg("Help3");
 };
 
 // main.ts

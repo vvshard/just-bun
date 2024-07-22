@@ -16,9 +16,9 @@ export async function start(args: string[]) {
         case '-u':
             return optFn.mainupdate();
         case '-P':
-            return optFn.csl(`Path to global recipe file: ${optFn.globalJB}`);
+            return optFn.msg(`Path to global recipe file: ${optFn.globalJB}`);
         case '-p':
-            return optFn.csl(`Path to recipe file: ${optFn.findPath() ?? 'Not found ↑'}`);
+            return optFn.msg(`Path to recipe file: ${optFn.findPath() ?? 'Not found ↑'}`);
         case '-O':
             return optFn.openInEditor(optFn.globalJB);
         case '-o':
@@ -73,12 +73,12 @@ export async function start(args: string[]) {
         case 'select':
             return await optFn.runByNumber(runRecipe);
         case 'show':
-            optFn.csl(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
+            optFn.msg(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
     }
 }
 
 function printHelp() {
-    optFn.csl('Help3');
+    optFn.msg('Help3');
 
 }
 

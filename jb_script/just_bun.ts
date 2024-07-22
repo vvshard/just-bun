@@ -2,7 +2,7 @@
 // BunSell: https://bun.sh/docs/runtime/shell
 
 import { $ } from "bun";
-import { p$, csl, err } from "./funcs.ts"
+import { p$, msg, err } from "./funcs.ts"
 
 //----//////----//////----//////----//////----//////----//////----//////
 

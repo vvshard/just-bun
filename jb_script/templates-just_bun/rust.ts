@@ -2,7 +2,7 @@
 // BunSell: https://bun.sh/docs/runtime/shell
 
 import { $ } from "bun";
-import { p$, csl, err } from "../funcs.ts"
+import { p$, msg, err } from "../funcs.ts"
 
 //----//////----//////----//////----//////----//////----//////----//////
 
@@ -16,12 +16,12 @@ export async function runRecipe(recipeName?: string, args = []) {
         case 'build_release':
         case 'b':
             await p$`cargo build --release`;
-            csl(`Result in: ${__dirname}/target/release`);
+            msg(`Result in: ${__dirname}/target/release`);
             break;
         case 'test':
-        case '# args: [filter] [-1] // -1: in one thread':
+        case '# args: [filter] [-nThreads] // e.g.: -1 - in one thread':
         case 't':
-            await p$`cargo test ${{ raw: args.join(' ').replace('-1', '-- --test-threads=1') }}`;
+            await p$`cargo test ${{ raw: args.join(' ').replace('-', '-- --test-threads=') }}`;
             break;
         default:
             return err(`recipeName error: '${recipeName}'`);
