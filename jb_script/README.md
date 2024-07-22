@@ -1,2 +1,2 @@
-# jb_global
+# jb_script
 
