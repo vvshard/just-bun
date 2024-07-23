@@ -14,7 +14,7 @@ function parseRecipes(fun) {
     return [];
   const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|\bbreak\b|\breturn\b|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
   const stack = ["MAIN"];
-  let list = [];
+  const list = [];
   let aliases = [];
   let comment = "";
   const matches = sfun.slice(iSwitch + 21).matchAll(re);
@@ -164,7 +164,7 @@ async function runFromList(runRecipe, runnerPath) {
     return err(`No recipes found in file ${rPath}`);
   const listS = list.map((a, i) => `${i + 1}. ${a.join(" | ")}`).join("\n");
   msg(`List of recipes in ${rPath}):\n${listS}`);
-  const lisnNames = list.flat().filter((s) => !s.startsWith(" #"));
+  const listNames = list.flat().filter((s) => !s.startsWith(" #"));
   msg("Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>");
   console.write("\u25C7 : ");
   for await (const line of console) {
@@ -179,9 +179,9 @@ async function runFromList(runRecipe, runnerPath) {
 \u25C7 : `);
         continue;
       } else {
-        recipeName = lisnNames[n - 1];
+        recipeName = listNames[n - 1];
       }
-    } else if (!lisnNames.includes(recipeName)) {
+    } else if (!listNames.includes(recipeName)) {
       console.write(`\u25C7 Wrong recipe name
 \u25C7 : `);
       continue;
@@ -263,7 +263,30 @@ async function start(args) {
   await runRecipe(args.shift(), args);
 }
 var printHelp = function() {
-  msg("Help3");
+  msg(`Command Line Format variants:   
+  * jb [-g] [<recipeName> [args]] - main use
+  * jb -f <path/to/recipe/file>.ts [<recipeName> [args]]
+  * jb -t [<templateSearchLine>]
+  * jb -lf <path/to/recipe/file>.ts
+  * jb <flag>
+
+Flags:
+  * -g  runs a recipe from the global recipe file located in the main.js folder
+  * -f  runs a recipe from any .ts-file specified in <path/to/recipe/file>
+  * -t  creates a new recipe file in the current folder based on the template 
+         [found]() by the first characters specified in <templateSearchLine> 
+  * -l  shows the path and numbered list of recipes for the current folder and offers 
+         to run the recipe by indicating its number | name | alias and [args]
+  * -L  is the same as -l, but for a global recipe file
+  * -lf is the same as -l, but for the file <path/to/recipe/file>.ts
+  * -o  [opens]() the current recipe file in the editor
+  * -O  [opens]() the global recipe file in the editor
+  * -p  prints relative and absolute path to the current recipe file
+  * -P  prints the absolute path to the global recipe file
+  * -@  installs/updates node_modules/ c @types/bun in the folder of the current recipe file, 
+         if it doesn't find it, then in the current folder
+  * -u [updates]() main.js from the internet
+  * -h, --help  displays help on format command line and flags`);
 };
 
 // main.ts

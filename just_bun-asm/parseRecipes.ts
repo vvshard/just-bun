@@ -6,11 +6,12 @@ export function parseRecipes(fun: Function): string[][] {
     if (iSwitch === -1)
         return [];
 
+    const decode = (s: string): string => JSON.parse(`"${s.replaceAll('"', '\\"')}"`);
     const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|\bbreak\b|\breturn\b|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
     type State = 'MAIN' | '\'' | '"' | '`' | '{';
     type Token = 'case' | 'break_return' | '${' | '}' | '\'' | '"' | '`' | '{';
     const stack: State[] = ['MAIN'];
-    let list: string[][] = [];
+    const list: string[][] = [];
     let aliases: string[] = [];
     let comment = "";
     const matches = sfun.slice(iSwitch + 21).matchAll(re);
@@ -26,14 +27,14 @@ export function parseRecipes(fun: Function): string[][] {
                         if (name?.startsWith('#')) {
                             comment += ' ' + name;
                         } else {
-                            aliases.push(name ?? '<default>');
+                            aliases.push(decode(name ?? '<default>'));
                         }
                         break;
                     case 'break_return':
                     case '}':
                         if (aliases.length) {
                             if (comment) {
-                                aliases.push(JSON.parse(`"${comment.replaceAll('"', '\\"')}"`));
+                                aliases.push(decode(comment));
                             }
                             list.push(aliases);
                         }
