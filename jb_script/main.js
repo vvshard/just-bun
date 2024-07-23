@@ -2,42 +2,48 @@
 // ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
 import path2 from "path";
 
+// ../../../code/JS/Bun/just-bun/just_bun-asm/optionsFuncs.ts
+import path from "path";
+var {$, Glob } = globalThis.Bun;
+
 // ../../../code/JS/Bun/just-bun/just_bun-asm/parseRecipes.ts
 function parseRecipes(fun) {
   const sfun = fun.toString();
   const iSwitch = sfun.search(/\bswitch \(recipeName\) \{/);
   if (iSwitch === -1)
-    throw 'The function passed to parseRecipes() does not contain a "switch (recipeName) {" statement.';
+    return [];
   const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|\bbreak\b|\breturn\b|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
   const stack = ["MAIN"];
-  let list = "";
-  let alias = 0;
+  let list = [];
+  let aliases = [];
   let comment = "";
   const matches = sfun.slice(iSwitch + 21).matchAll(re);
   for (const match of matches) {
     const { case_, name1, name2, token: token0 } = match.groups;
     const token = token0 ?? case_ ?? "break_return";
-    const name = name1 ?? name2;
     const state = stack.at(-1);
     switch (state) {
       case "MAIN":
         switch (token) {
           case "case":
+            const name = name1 ?? name2;
             if (name?.startsWith("#")) {
               comment += " " + name;
             } else {
-              list += (["", " / "][alias] ?? " ") + (name ?? "<default>");
-              alias += 1;
+              aliases.push(name ?? "<default>");
             }
             break;
           case "break_return":
           case "}":
-            if (alias) {
-              list += (comment ? JSON.parse(`"${comment.replaceAll('"', '\\"')}"`) : "") + "\n";
-              alias = 0;
+            if (aliases.length) {
+              if (comment) {
+                aliases.push(JSON.parse(`"${comment.replaceAll('"', '\\"')}"`));
+              }
+              list.push(aliases);
             }
             if (token === "}")
-              return list.trimEnd();
+              return list;
+            aliases = [];
             comment = "";
             break;
           default:
@@ -63,12 +69,10 @@ function parseRecipes(fun) {
         }
     }
   }
-  return list.trimEnd();
+  return list;
 }
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/optionsFuncs.ts
-import path from "path";
-var {$, Glob } = globalThis.Bun;
 function findPath(glob = jbGlob) {
   let currentPath;
   let parentPath = process.cwd();
@@ -153,27 +157,38 @@ async function openInEditor(file) {
     err(`Error opening recipe file:\n${stderr}`);
   }
 }
-async function runByNumber(runRecipe) {
-  const listR = parseRecipes(runRecipe).split("\n");
-  msg("Enter the recipe number and, if necessary, arguments:\n" + listR.map((s, i) => `${i + 1}. ${s}`).join("\n"));
+async function runFromList(runRecipe, runnerPath) {
+  const rPath = runnerPath === globalJB ? globalJB : `./${path.relative(process.cwd(), runnerPath)} (${path.resolve(runnerPath)})`;
+  const list = parseRecipes(runRecipe);
+  if (!list.length)
+    return err(`No recipes found in file ${rPath}`);
+  const listS = list.map((a, i) => `${i + 1}. ${a.join(" | ")}`).join("\n");
+  msg(`List of recipes in ${rPath}):\n${listS}`);
+  const lisnNames = list.flat().filter((s) => !s.startsWith(" #"));
+  msg("Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>");
+  console.write("\u25C7 : ");
   for await (const line of console) {
-    if (!line)
+    if (line === "`")
       return msg("Reset");
-    const args = line.split(" ");
-    const n = Math.floor(Number(args.shift()));
-    if (isNaN(n)) {
-      console.write("Enter the recipe NUMBER\n");
-    } else if (n < 1 || n > listR.length) {
-      console.write("Number outside the list\n");
-    } else {
-      let recipeName = listR[n - 1].split(" ", 1)[0];
-      if (recipeName === "<default>") {
-        await runRecipe(undefined);
+    const args = line.trimStart().split(/ +/);
+    let recipeName = args.shift() || "<default>";
+    const n = Math.floor(Number(recipeName));
+    if (!isNaN(n) && n > 0) {
+      if (n > list.length) {
+        console.write(`\u25C7 Number outside the list
+\u25C7 : `);
+        continue;
       } else {
-        await runRecipe(recipeName, args);
+        recipeName = lisnNames[n - 1];
       }
-      return;
+    } else if (!lisnNames.includes(recipeName)) {
+      console.write(`\u25C7 Wrong recipe name
+\u25C7 : `);
+      continue;
     }
+    if (recipeName === "<default>")
+      return await runRecipe(undefined);
+    return await runRecipe(recipeName, args);
   }
 }
 var msg = (message) => console.log("\u25C7 " + message.replaceAll("\n", "\n  "));
@@ -188,7 +203,7 @@ var settings = !fileSettings.size ? undefined : await fileSettings.json();
 
 // ../../../code/JS/Bun/just-bun/just_bun-asm/index.ts
 async function start(args) {
-  let displayList;
+  let displayList = false;
   let runnerPath;
   switch (args[0]) {
     case "--help":
@@ -203,7 +218,8 @@ async function start(args) {
     case "-P":
       return msg(`Path to global recipe file: ${globalJB}`);
     case "-p":
-      return msg(`Path to recipe file: ${findPath() ?? "Not found \u2191"}`);
+      const fPath = findPath();
+      return msg(`Path to recipe file: ${!fPath ? "Not found \u2191" : `./${path2.relative(process.cwd(), fPath)} (${fPath})`}`);
     case "-O":
       return openInEditor(globalJB);
     case "-o":
@@ -211,15 +227,10 @@ async function start(args) {
     case "-L":
       runnerPath = globalJB;
     case "-l":
-      displayList = "show";
+      displayList = true;
       break;
-    case "-N":
-      runnerPath = globalJB;
-    case "-n":
-      displayList = "select";
-      break;
-    case "-nf":
-      displayList = "select";
+    case "-lf":
+      displayList = true;
     case "-f":
       args.shift();
       runnerPath = args.shift();
@@ -247,14 +258,9 @@ async function start(args) {
   const { runRecipe } = await import(path2.resolve(runnerPath));
   if (!runRecipe)
     return err(`${reportPath} does not contain export function runRecipe()`);
-  switch (displayList) {
-    case undefined:
-      return await runRecipe(args.shift(), args);
-    case "select":
-      return await runByNumber(runRecipe);
-    case "show":
-      msg(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
-  }
+  if (displayList)
+    return await runFromList(runRecipe, runnerPath);
+  await runRecipe(args.shift(), args);
 }
 var printHelp = function() {
   msg("Help3");

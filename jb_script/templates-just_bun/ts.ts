@@ -22,7 +22,7 @@ export async function runRecipe(recipeName?: string, args = []) {
             await p$`bun build ${main} --outdir ${outdir}`;
             break;
         case 'buildU': 
-        case '# decode \\uXXXX':
+        case '# build with decode \\uXXXX':
         case 'u':
             buildAndDecode_uXXXX();
             break;
@@ -43,10 +43,10 @@ async function buildAndDecode_uXXXX() {
     let ns = Bun.nanoseconds();
     const build = await Bun.build({ entrypoints: [main] });
     let out = await build.outputs.find(o => o.kind === 'entry-point')!.text();
-    console.log(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] build`);
+    msg(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] build`);
     out = decode_uXXXX(out);
-    console.log(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] decoding`);
+    msg(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] decoding`);
     const outFile = path.join(outdir, path.basename(main));
     await Bun.write(outFile, out);
-    console.log(`[${((Bun.nanoseconds() - ns) / 1000_000).toFixed()} ms] write`);
+    msg(`[${((Bun.nanoseconds() - ns) / 1000_000).toFixed()} ms] write`);
 }

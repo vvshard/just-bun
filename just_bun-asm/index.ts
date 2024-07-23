@@ -1,9 +1,8 @@
 import path from "path";
-import { parseRecipes } from "./parseRecipes";
 import * as optFn from "./optionsFuncs";
 
 export async function start(args: string[]) {
-    let displayList: 'show' | 'select' | undefined;
+    let displayList = false;
     let runnerPath: string | undefined;
     switch (args[0]) {
         case '--help':
@@ -18,7 +17,10 @@ export async function start(args: string[]) {
         case '-P':
             return optFn.msg(`Path to global recipe file: ${optFn.globalJB}`);
         case '-p':
-            return optFn.msg(`Path to recipe file: ${optFn.findPath() ?? 'Not found ↑'}`);
+            const fPath = optFn.findPath();
+            return optFn.msg(`Path to recipe file: ${!fPath ? 'Not found ↑'
+                :`./${path.relative(process.cwd(), fPath)} (${fPath})`
+            }`);
         case '-O':
             return optFn.openInEditor(optFn.globalJB);
         case '-o':
@@ -27,17 +29,11 @@ export async function start(args: string[]) {
         case '-L':
             runnerPath = optFn.globalJB;
         case '-l':
-            displayList = 'show';
+            displayList = true;
             break;
         //@ts-ignore
-        case '-N':
-            runnerPath = optFn.globalJB;
-        case '-n':
-            displayList = 'select';
-            break;
-        //@ts-ignore
-        case '-nf':
-            displayList = 'select';
+        case '-lf':
+            displayList = true;
         case '-f':
             args.shift();
             runnerPath = args.shift();
@@ -62,19 +58,14 @@ export async function start(args: string[]) {
         if (!Bun.file(runnerPath).size)
             return optFn.err(`Not found ${runnerPath}`);
     }
-    const { runRecipe }: { runRecipe: (recipeName?: string, args?: string[]) => any }
-        = await import(path.resolve(runnerPath));
+    const { runRecipe }: { runRecipe: optFn.RunRecipe } = await import(path.resolve(runnerPath));
     if (!runRecipe)
         return optFn.err(`${reportPath} does not contain export function runRecipe()`);
 
-    switch (displayList) {
-        case undefined:
-            return await runRecipe(args.shift(), args);
-        case 'select':
-            return await optFn.runByNumber(runRecipe);
-        case 'show':
-            optFn.msg(`List of recipes in ${reportPath}:\n${parseRecipes(runRecipe)}`);
-    }
+    if (displayList) 
+        return await optFn.runFromList(runRecipe, runnerPath);
+
+    await runRecipe(args.shift(), args);
 }
 
 function printHelp() {

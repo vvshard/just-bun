@@ -2,12 +2,15 @@ import path from "path";
 import { $, Glob } from "bun";
 import { parseRecipes } from "./parseRecipes";
 
+export type RunRecipe = (recipeName?: string, args?: string[]) => any
+
 /** Prints message to the console with the appropriate label */
 export const msg = (message: string) => console.log('◇ ' + message.replaceAll('\n', '\n  '));
 /** Prints message to the console with the appropriate label */
 export const err = (message: string) => console.log('◆ ' + message.replaceAll('\n', '\n  '));
 const mainDir = path.dirname(Bun.main);
 export const globalJB = mainDir + '/just_bun.ts';
+
 
 const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
 const jbGlob = new Glob(jbPattern + '.ts');
@@ -99,7 +102,7 @@ export async function openInEditor(file?: string) {
     if (!file)
         return err('Not found recipe file');
     const openCommand: string = (settings?.editor?.fileOpen ?? 'code --goto %file%')
-    .replace('%file%', `"${file}"`);
+        .replace('%file%', `"${file}"`);
     if (settings?.editor?.fileOpenReport) {
         msg(openCommand !== 'none' ? '$ ' + openCommand
             : `File opening disabled in ${mainDir}/settings.json:\n "editor"/"fileOpen": "none"`
@@ -113,27 +116,37 @@ export async function openInEditor(file?: string) {
     }
 }
 
-export async function runByNumber(runRecipe: (recipeName: any, args?: string[]) => any) {
-    const listR = parseRecipes(runRecipe).split('\n');
-    msg('Enter the recipe number and, if necessary, arguments:\n'
-        + listR.map((s, i) => `${i + 1}. ${s}`).join('\n'));
+export async function runFromList(runRecipe: RunRecipe, runnerPath: string) {
+    const rPath = runnerPath === globalJB ? globalJB
+        : `./${path.relative(process.cwd(), runnerPath)} (${path.resolve(runnerPath)})`;
+    const list = parseRecipes(runRecipe);
+    if (!list.length)
+        return err(`No recipes found in file ${rPath}`);
+    const listS = list.map((a, i) => `${i + 1}. ${a.join(' | ')}`).join('\n');
+    msg(`List of recipes in ${rPath}):\n${listS}`);
+    const lisnNames = list.flat().filter(s => !s.startsWith(' #'));
+    msg('Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>');
+    console.write('◇ : ');
     for await (const line of console) {
-        if (!line)
+        if (line === '`')
             return msg('Reset');
-        const args = line.split(' ');
-        const n = Math.floor(Number(args.shift()));
-        if (isNaN(n)) {
-            console.write('Enter the recipe NUMBER\n');
-        } else if (n < 1 || n > listR.length) {
-            console.write('Number outside the list\n');
-        } else {
-            let recipeName = listR[n - 1].split(' ', 1)[0];
-            if (recipeName === '<default>') {
-                await runRecipe(undefined);
+        const args = line.trimStart().split(/ +/);
+        let recipeName = args.shift() || '<default>';
+        const n = Math.floor(Number(recipeName));
+        if (!isNaN(n) && n > 0) {
+            if (n > list.length) {
+                console.write('◇ Number outside the list\n◇ : ');
+                continue;
             } else {
-                await runRecipe(recipeName, args);
+                recipeName = lisnNames[n - 1];
             }
-            return;
+        } else if (!lisnNames.includes(recipeName)) {
+            console.write('◇ Wrong recipe name\n◇ : ');
+            continue;
         }
+        if (recipeName === '<default>')
+            return await runRecipe(undefined);
+
+        return await runRecipe(recipeName, args);
     }
 }

@@ -1,17 +1,17 @@
 /** Returns a list of recipes based on the text of the function */
-export function parseRecipes(fun: Function): string {
-    const sfun = fun.toString(); 
+export function parseRecipes(fun: Function): string[][] {
+    const sfun = fun.toString();
     // in Bun toString() for function removes comments and formats spaces
     const iSwitch = sfun.search(/\bswitch \(recipeName\) \{/);
     if (iSwitch === -1)
-        throw 'The function passed to parseRecipes() does not contain a "switch (recipeName) {" statement.';
+        return [];
 
     const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|\bbreak\b|\breturn\b|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
     type State = 'MAIN' | '\'' | '"' | '`' | '{';
     type Token = 'case' | 'break_return' | '${' | '}' | '\'' | '"' | '`' | '{';
     const stack: State[] = ['MAIN'];
-    let list = "";
-    let alias = 0;
+    let list: string[][] = [];
+    let aliases: string[] = [];
     let comment = "";
     const matches = sfun.slice(iSwitch + 21).matchAll(re);
     for (const match of matches) {
@@ -26,18 +26,20 @@ export function parseRecipes(fun: Function): string {
                         if (name?.startsWith('#')) {
                             comment += ' ' + name;
                         } else {
-                            list += (['', ' / '][alias] ?? ' ') + (name ?? '<default>');
-                            alias += 1;
+                            aliases.push(name ?? '<default>');
                         }
                         break;
                     case 'break_return':
                     case '}':
-                        if (alias) {
-                            list += (comment ? JSON.parse(`"${comment.replaceAll('"', '\\"')}"`) : "") + '\n';
-                            alias = 0;
+                        if (aliases.length) {
+                            if (comment) {
+                                aliases.push(JSON.parse(`"${comment.replaceAll('"', '\\"')}"`));
+                            }
+                            list.push(aliases);
                         }
                         if (token === '}')
-                            return list.trimEnd();
+                            return list;
+                        aliases = [];
                         comment = "";
                         break;
                     default:
@@ -65,5 +67,5 @@ export function parseRecipes(fun: Function): string {
                 }
         }
     }
-    return list.trimEnd(); // never?
+    return list; // never?
 }
