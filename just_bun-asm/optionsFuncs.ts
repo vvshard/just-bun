@@ -124,12 +124,13 @@ export async function runFromList(runRecipe: RunRecipe, runnerPath: string) {
         return err(`No recipes found in file ${rPath}`);
     const listS = list.map((a, i) => `${i + 1}. ${a.join(' | ')}`).join('\n');
     msg(`List of recipes in ${rPath}):\n${listS}`);
-    const listNames = list.flat().filter(s => !s.startsWith(' #'));
+    const listNames = list.flat().filter(s => !s.startsWith('#'));
     msg('Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>');
     console.write('◇ : ');
     for await (const line of console) {
         if (line === '`')
             return msg('Reset');
+        
         const args = line.trimStart().split(/ +/);
         let recipeName = args.shift() || '<default>';
         const n = Math.floor(Number(recipeName));
@@ -138,7 +139,7 @@ export async function runFromList(runRecipe: RunRecipe, runnerPath: string) {
                 console.write('◇ Number outside the list\n◇ : ');
                 continue;
             } else {
-                recipeName = listNames[n - 1];
+                recipeName = list[n - 1][0];
             }
         } else if (!listNames.includes(recipeName)) {
             console.write('◇ Wrong recipe name\n◇ : ');

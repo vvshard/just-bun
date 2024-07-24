@@ -6,14 +6,13 @@ export function parseRecipes(fun: Function): string[][] {
     if (iSwitch === -1)
         return [];
 
-    const decode = (s: string): string => JSON.parse(`"${s.replaceAll('"', '\\"')}"`);
     const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|;|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
     type State = 'MAIN' | '\'' | '"' | '`' | '{';
     type Token = 'case' | ';' | '${' | '}' | '\'' | '"' | '`' | '{';
     const stack: State[] = ['MAIN'];
     const list: string[][] = [];
     let aliases: string[] = [];
-    let comment = "";
+    let comments: string[] = [];
     const matches = sfun.slice(iSwitch + 21).matchAll(re);
     for (const match of matches) {
         const { case_, name1, name2, token: token0 } = match.groups!;
@@ -23,25 +22,22 @@ export function parseRecipes(fun: Function): string[][] {
             case 'MAIN':
                 switch (token) {
                     case 'case':
-                        const name = name1 ?? name2;
-                        if (name?.startsWith('#')) {
-                            comment += ' ' + name;
-                        } else {
-                            aliases.push(decode(name ?? '<default>'));
-                        }
+                        const name: string = JSON // decode \uXXXX to non-ASCII
+                            .parse(`"${(name1 ?? name2 ?? '<default>').replaceAll('"', '\\"')}"`);
+                        (name.startsWith('#') ? comments : aliases).push(name);
                         break;
                     case ';':
                     case '}':
                         if (aliases.length) {
-                            if (comment) {
-                                aliases.push(decode(comment));
+                            if (comments.length) {
+                                aliases.push(comments.join(' '));
                             }
                             list.push(aliases);
                         }
                         if (token === '}')
                             return list;
                         aliases = [];
-                        comment = "";
+                        comments = [];
                         break;
                     default:
                         stack.push(token as State);
