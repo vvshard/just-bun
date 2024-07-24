@@ -2,6 +2,10 @@ import path from "path";
 import * as optFn from "./optionsFuncs";
 
 export async function start(args: string[]) {
+    if (!globalThis.Bun)
+        return console.log('This script should be run in a Bun');
+    if (Bun.version.split('.').reduce((a, n) => a * 1000 + +n, 0) < 1_001_019)
+        return optFn.err('Version Bun must be at least 1.1.19');
     let displayList = false;
     let runnerPath: string | undefined;
     switch (args[0]) {
@@ -19,8 +23,8 @@ export async function start(args: string[]) {
         case '-p':
             const fPath = optFn.findPath();
             return optFn.msg(`Path to recipe file: ${!fPath ? 'Not found ↑'
-                :`./${path.relative(process.cwd(), fPath)} (${fPath})`
-            }`);
+                : `./${path.relative(process.cwd(), fPath)} (${fPath})`
+                }`);
         case '-O':
             return optFn.openInEditor(optFn.globalJB);
         case '-o':
@@ -62,7 +66,7 @@ export async function start(args: string[]) {
     if (!runRecipe)
         return optFn.err(`${reportPath} does not contain export function runRecipe()`);
 
-    if (displayList) 
+    if (displayList)
         return await optFn.runFromList(runRecipe, runnerPath);
 
     await runRecipe(args.shift(), args);
