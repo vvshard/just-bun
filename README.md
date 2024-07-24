@@ -94,7 +94,7 @@ For example, `Just_Bun.ts` and `.JUST_BUN.ts` are valid names.
 This section can also be read using the command `jb -h` or `jb --help`
 
 Command Line Format variants:   
-  * `jb [-g] [<recipeName> [args]]` - main use
+  * `jb [-g] [<recipeName> [args]]`   # main use
   * `jb -f <path/to/recipe/file>.ts [<recipeName> [args]]`
   * `jb -t [<templateSearchLine>]`
   * `jb -lf <path/to/recipe/file>.ts`

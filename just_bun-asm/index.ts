@@ -69,9 +69,10 @@ export async function start(args: string[]) {
 }
 
 function printHelp() {
-    optFn.msg(`Called out ${Bun.main}: recipe launcher.
+    optFn.msg(`$ bun run "${Bun.main}": script - recipe launcher "just-bun"
+
 Command Line Format variants (jb - alias for "bun <path>/${path.basename(Bun.main)}"):   
-  * jb [-g] [<recipeName> [args]] - main use
+  * jb [-g] [<recipeName> [args]]   # main use
   * jb -f <path/to/recipe/file>.ts [<recipeName> [args]]
   * jb -t [<templateSearchLine>]
   * jb -lf <path/to/recipe/file>.ts

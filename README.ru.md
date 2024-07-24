@@ -94,7 +94,7 @@ export async function runRecipe(recipeName?: string, args = []) {
 Этот раздел так же можно прочитать по команде `jb -h` или `jb --help`
 
 Варианты командной строки:   
-  * `jb [-g] [<recipeName> [args]]` - основное использование
+  * `jb [-g] [<recipeName> [args]]`  # основное использование
   * `jb -f <path/to/recipe/file>.ts [<recipeName> [args]]`
   * `jb -t [<templateSearchLine>]`
   * `jb -lf <path/to/recipe/file>.ts`

@@ -20,7 +20,7 @@ fn main() {
         Some(arg) => {
             if arg == "--help" {
                 println!(
-                    "Run {path_exe} --help:\n description: This in turn is only run:$ bun \"{}\" [...args]",
+                    "--help: {path_exe} is called: it in turn runs: $ bun \"{}\" [...args]",
                     path.to_str().unwrap()
                 );
             }
