@@ -1,2 +1,0 @@
-# jb_script
-
