@@ -12,7 +12,8 @@ function parseRecipes(fun) {
   const iSwitch = sfun.search(/\bswitch \(recipeName\) \{/);
   if (iSwitch === -1)
     return [];
-  const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|\bbreak\b|\breturn\b|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
+  const decode = (s) => JSON.parse(`"${s.replaceAll('"', '\\"')}"`);
+  const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|;|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
   const stack = ["MAIN"];
   const list = [];
   let aliases = [];
@@ -20,7 +21,7 @@ function parseRecipes(fun) {
   const matches = sfun.slice(iSwitch + 21).matchAll(re);
   for (const match of matches) {
     const { case_, name1, name2, token: token0 } = match.groups;
-    const token = token0 ?? case_ ?? "break_return";
+    const token = token0 ?? case_ ?? ";";
     const state = stack.at(-1);
     switch (state) {
       case "MAIN":
@@ -30,14 +31,14 @@ function parseRecipes(fun) {
             if (name?.startsWith("#")) {
               comment += " " + name;
             } else {
-              aliases.push(name ?? "<default>");
+              aliases.push(decode(name ?? "<default>"));
             }
             break;
-          case "break_return":
+          case ";":
           case "}":
             if (aliases.length) {
               if (comment) {
-                aliases.push(JSON.parse(`"${comment.replaceAll('"', '\\"')}"`));
+                aliases.push(decode(comment));
               }
               list.push(aliases);
             }
@@ -263,7 +264,8 @@ async function start(args) {
   await runRecipe(args.shift(), args);
 }
 var printHelp = function() {
-  msg(`Command Line Format variants:   
+  msg(`Called out ${Bun.main}: recipe launcher.
+Command Line Format variants (jb - alias for "bun <path>/${path2.basename(Bun.main)}"):   
   * jb [-g] [<recipeName> [args]] - main use
   * jb -f <path/to/recipe/file>.ts [<recipeName> [args]]
   * jb -t [<templateSearchLine>]

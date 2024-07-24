@@ -140,8 +140,6 @@ expression recipeName: `switch (recipeName) {...}` and all restrictions apply on
     then, if there is, after ` | ` aliases, and at the end - all recipe comments in one line separated by a space.  
     A `case` with the value `undefined` is listed as `<default>` and can be either 
     an alias or the first or only `case` in the chain.
-3.  All branches of a recipe's operations, with the possible exception of the last one, 
-    must have an out-of-block (not enclosed in curly braces) `break` or `return`.
 
 ## Contents of the jb_script/ folder
 

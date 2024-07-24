@@ -1,15 +1,15 @@
 /** Returns a list of recipes based on the text of the function */
 export function parseRecipes(fun: Function): string[][] {
     const sfun = fun.toString();
-    // in Bun toString() for function removes comments and formats spaces
+    // in Bun toString() for function removes comments, formats whitespace, places semicolons, and encodes non-ASCII 
     const iSwitch = sfun.search(/\bswitch \(recipeName\) \{/);
     if (iSwitch === -1)
         return [];
 
     const decode = (s: string): string => JSON.parse(`"${s.replaceAll('"', '\\"')}"`);
-    const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|\bbreak\b|\breturn\b|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
+    const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|;|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
     type State = 'MAIN' | '\'' | '"' | '`' | '{';
-    type Token = 'case' | 'break_return' | '${' | '}' | '\'' | '"' | '`' | '{';
+    type Token = 'case' | ';' | '${' | '}' | '\'' | '"' | '`' | '{';
     const stack: State[] = ['MAIN'];
     const list: string[][] = [];
     let aliases: string[] = [];
@@ -17,7 +17,7 @@ export function parseRecipes(fun: Function): string[][] {
     const matches = sfun.slice(iSwitch + 21).matchAll(re);
     for (const match of matches) {
         const { case_, name1, name2, token: token0 } = match.groups!;
-        const token = (token0 ?? case_ ?? 'break_return') as Token;
+        const token = (token0 ?? case_ ?? ';') as Token;
         const state = stack.at(-1)!;
         switch (state) {
             case 'MAIN':
@@ -30,7 +30,7 @@ export function parseRecipes(fun: Function): string[][] {
                             aliases.push(decode(name ?? '<default>'));
                         }
                         break;
-                    case 'break_return':
+                    case ';':
                     case '}':
                         if (aliases.length) {
                             if (comment) {
