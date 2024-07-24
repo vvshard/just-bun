@@ -124,7 +124,7 @@ export async function runFromList(runRecipe: RunRecipe, runnerPath: string) {
         return err(`No recipes found in file ${rPath}`);
     const listS = list.map(([aliases, comments], i) => {
         let res = `${i + 1}. ${aliases.join(' | ')} `;
-        return res + comments.join('\n' + ' '.repeat(res.length));
+        return res + comments.join('\n' + ' '.repeat(Bun.stringWidth(res)));
     }).join('\n');
     msg(`List of recipes in ${rPath}):\n${listS}`);
     const listNames = list.flatMap(([aliases, comments]) => aliases);
