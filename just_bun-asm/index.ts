@@ -78,7 +78,8 @@ Command Line Format variants (jb - alias for "bun <path>/${path.basename(Bun.mai
   * jb <flag>
 
 Flags:
-  * -g  runs a recipe from the global recipe file located in the main.js folder
+  * -g  runs a recipe from the global recipe file located in the main.js folder. Without the -g flag, 
+         the recipe file is searched in the current directory and up the chain of parent directories
   * -f  runs a recipe from any .ts-file specified in \<path/to/recipe/file>
   * -t  creates a new recipe file in the current folder based on the template 
          [found]() by the first characters specified in \<templateSearchLine> 

@@ -48,26 +48,23 @@ export async function runRecipe(recipeName?: string, args = []) {
 Now, in the directory containing this just_bun.ts or in its child directory, the terminal command `jb -l` will output:
 ```
 ◇ List of recipes in ./just_bun.ts (<absolute path>/just_bun.ts):
-  1. run | r | <default>
-  2. build_release | b
-  3. test | t |  # args: [filter] [-nThreads] // e.g.: -1 - in one thread
+  1. run | r | <default> 
+  2. build_release | b 
+  3. test | t # args: [filter] [-nThreads] // e.g.: -1 - in one thread
 ◇ Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>
 ◇: ▮
 ```
-Ввод на приглашение `1` или `run` или `r` или просто `<Enter>` выполнит: `cargo run`.    
-А, например, ввод `t add -1` выполнит: `cargo test add -- --test-threads=1`.
+Typing `1` or `run` or `r` or just `<Enter>` at the prompt will do: `cargo run`.    
+And, for example, typing `3 -1` or `t -1` will produce: `cargo test -- --test-threads=1`.
 
-Тот же результат можно получить без `jb -l`, вызвав в shell напрямую:    
-`jb run` или `jb r` или просто `jb` - для  `cargo run`  
-или `jb t add -1` - для `cargo test add -- --test-threads=1`.
-
-The command `jb run`, or `jb r`, or simply `jb` will execute: `cargo run`.  
-The command `jb t add -1` will execute: `cargo test add -- --test-threads=1`.
+The same result can be obtained without `jb -l` by calling directly in the shell:    
+`jb run` or `jb r` or just `jb` - for `cargo run`    
+or `jb t -1` - for `cargo test -- --test-threads=1`.
 
 If you prefer, the recipe file name can have a dot in front and any letter case before the extension.   
-For example, Just_Bun.ts and .JUST_BUN.ts are valid names.
+For example, `Just_Bun.ts` and `.JUST_BUN.ts` are valid names.
 
-[Read more about the limitations of the **function runRecipe()** syntax below](#ограничения-синтаксиса-function-runrecipe).
+[Read more about the limitations of the **function runRecipe()** syntax below](#function-runrecipe-syntax-restrictions).
 
 [More information about syntax and working with **Bun Shell** - follow the link](https://bun.sh/docs/runtime/shell). 
 
@@ -85,7 +82,7 @@ For example, Just_Bun.ts and .JUST_BUN.ts are valid names.
     folder of the repository and place it in any folder from the env PATH (for example, ~/.bun/bin or in ~/.cargo/bin). 
     The only thing it does is call `bun <path to jb>/../jb_script/main.js` with the arguments passed to it. 
     Then the jb_script/ folder must be placed next to the folder where you put the jb file. If desired, 
-    you can synchronously rename the file and folder to a more convenient name for calling, 
+    you can synchronously rename the launcher-file and folder to a more convenient name for calling, 
     for example - in **j** (**j.exe** for Windows) and **j_script**/ respectively.
 4.  At this point everything works, but your code editor requires @types/bun declarations for 
     autocompletion and type checking from the Bun-API when editing recipe files.   
@@ -104,21 +101,22 @@ Command Line Format variants:
   * `jb <flag>`
 
 Flags:
-  * `-g` runs a recipe from the global recipe file located in the main.js folder
+  * `-g` runs a recipe from the global recipe file located in the main.js folder. Without the -g flag,
+        the recipe file is searched in the current directory and up the chain of parent directories
   * `-f` runs a recipe from any .ts-file specified in \<path/to/recipe/file>
   * `-t` creates a new recipe file in the current folder based on the template 
-        [found]() by the first characters specified in \<templateSearchLine> 
+        [found](#templates-just_bun-folder) by the first characters specified in \<templateSearchLine> 
   * `-l` shows the path and numbered list of recipes for the current folder and offers 
         to run the recipe by indicating its number | name | alias and [args]
   * `-L` is the same as `-l`, but for a global recipe file
   * `-lf` is the same as `-l`, but for the file \<path/to/recipe/file>.ts
-  * `-o` [opens]() the current recipe file in the editor
-  * `-O` [opens]() the global recipe file in the editor
+  * `-o` [opens](#settingsjson) the current recipe file in the editor
+  * `-O` [opens](#settingsjson) the global recipe file in the editor
   * `-p` prints relative and absolute path to the current recipe file
   * `-P` prints the absolute path to the global recipe file
   * `-@` installs/updates node_modules/ c @types/bun in the folder of the current recipe file, 
         if it doesn't find it, then in the current folder
-  * `-u` [updates]() main.js from the internet
+  * `-u` [updates](#mainupdate-folder) main.js from the internet
   * `-h`, `--help` displays help on format command line and flags
 
 ## Function runRecipe() syntax restrictions
@@ -128,16 +126,17 @@ displayed using the `-l`, `-L`, `-lf` flags:
 
 The list of recipes is formed using the text the first in function, switch statement from the 
 expression recipeName: `switch (recipeName) {...}` and all restrictions apply only to this statement :
-1.  All `case` expressions must be string literals, enclosed in `"` or `'` quotes, without line breaks. 
-    Only one `case` is allowed per entire switch statement with an `undefined` literal for the default recipe.
+1.  All `case` expressions must be string literals without line breaks. 
+    Only one `case` is allowed per entire switch statement with an *undefined* literal for the default recipe.
 2.  A chain of several `cases` before a common branch of operations is:
     * optional recipe comments: `case` starting with "#"
     * required recipe name: first `case` - is not a comment
     * optional recipe aliases
 
-    `case` - comments can be anywhere in the chain      
-    Such a recipe is displayed in the list in one line: at the beginning - the name of the recipe, 
-    then, if there is, after ` | ` aliases, and at the end - all recipe comments in one line separated by a space.  
+    `case` - comments can be anywhere in the chain.      
+    Such a recipe is displayed in the list in one line: at the beginning - the name of the recipe 
+    and its aliases separated by ` | `, and at the end - the first comment of the recipe (if any).
+    The remaining recipe comments, if any, are displayed as additional lines in the column of first  comment .      
     A `case` with the value `undefined` is listed as `<default>` and can be either 
     an alias or the first or only `case` in the chain.
 

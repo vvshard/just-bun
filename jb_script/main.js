@@ -12,40 +12,32 @@ function parseRecipes(fun) {
   const iSwitch = sfun.search(/\bswitch \(recipeName\) \{/);
   if (iSwitch === -1)
     return [];
-  const decode = (s) => JSON.parse(`"${s.replaceAll('"', '\\"')}"`);
-  const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|void 0):|;|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
+  const re = /\b(?<case_>case) ('(?<name1>(?:\\'|[^'])*)'|"(?<name2>(?:\\"|[^"])*)"|`(?<name3>(?:\\`|[^`])*)`|void 0):|;|(?<!\\)(?<token>\$\{|[}'"`\{])/g;
   const stack = ["MAIN"];
   const list = [];
   let aliases = [];
-  let comment = "";
+  let comments = [];
   const matches = sfun.slice(iSwitch + 21).matchAll(re);
   for (const match of matches) {
-    const { case_, name1, name2, token: token0 } = match.groups;
+    const { case_, name1, name2, name3, token: token0 } = match.groups;
     const token = token0 ?? case_ ?? ";";
     const state = stack.at(-1);
     switch (state) {
       case "MAIN":
         switch (token) {
           case "case":
-            const name = name1 ?? name2;
-            if (name?.startsWith("#")) {
-              comment += " " + name;
-            } else {
-              aliases.push(decode(name ?? "<default>"));
-            }
+            const name = JSON.parse(`"${(name1 ?? name2 ?? name3 ?? "<default>").replaceAll('"', '\\"')}"`);
+            (name.startsWith("#") ? comments : aliases).push(name);
             break;
           case ";":
           case "}":
             if (aliases.length) {
-              if (comment) {
-                aliases.push(decode(comment));
-              }
-              list.push(aliases);
+              list.push([aliases, comments]);
             }
             if (token === "}")
               return list;
             aliases = [];
-            comment = "";
+            comments = [];
             break;
           default:
             stack.push(token);
@@ -163,9 +155,12 @@ async function runFromList(runRecipe, runnerPath) {
   const list = parseRecipes(runRecipe);
   if (!list.length)
     return err(`No recipes found in file ${rPath}`);
-  const listS = list.map((a, i) => `${i + 1}. ${a.join(" | ")}`).join("\n");
+  const listS = list.map(([aliases, comments], i) => {
+    let res = `${i + 1}. ${aliases.join(" | ")} `;
+    return res + comments.join("\n" + " ".repeat(res.length));
+  }).join("\n");
   msg(`List of recipes in ${rPath}):\n${listS}`);
-  const listNames = list.flat().filter((s) => !s.startsWith(" #"));
+  const listNames = list.flatMap(([aliases, comments]) => aliases);
   msg("Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>");
   console.write("\u25C7 : ");
   for await (const line of console) {
@@ -180,7 +175,7 @@ async function runFromList(runRecipe, runnerPath) {
 \u25C7 : `);
         continue;
       } else {
-        recipeName = listNames[n - 1];
+        recipeName = list[n - 1][0][0];
       }
     } else if (!listNames.includes(recipeName)) {
       console.write(`\u25C7 Wrong recipe name
@@ -273,7 +268,8 @@ Command Line Format variants (jb - alias for "bun <path>/${path2.basename(Bun.ma
   * jb <flag>
 
 Flags:
-  * -g  runs a recipe from the global recipe file located in the main.js folder
+  * -g  runs a recipe from the global recipe file located in the main.js folder. Without the -g flag, 
+         the recipe file is searched in the current directory and up the chain of parent directories
   * -f  runs a recipe from any .ts-file specified in <path/to/recipe/file>
   * -t  creates a new recipe file in the current folder based on the template 
          [found]() by the first characters specified in <templateSearchLine> 
