@@ -18,7 +18,7 @@ function parseRecipes(fun) {
   const list = [];
   let aliases = [];
   let comments = [];
-  const matches = sfun.slice(switchM.index + spaces.length).matchAll(re);
+  const matches = sfun.slice(switchM.index + 1).matchAll(re);
   for (const match of matches) {
     let { name, stop } = match.groups;
     if (name) {
@@ -259,18 +259,18 @@ Flags:
          the recipe file is searched in the current directory and up the chain of parent directories
   * -f  runs a recipe from any .ts-file specified in <path/to/recipe/file>
   * -t  creates a new recipe file in the current folder based on the template 
-         [found]() by the first characters specified in <templateSearchLine> 
+         found by the first characters specified in <templateSearchLine> 
   * -l  shows the path and numbered list of recipes for the current folder and offers 
          to run the recipe by indicating its number | name | alias and [args]
   * -L  is the same as -l, but for a global recipe file
   * -lf is the same as -l, but for the file <path/to/recipe/file>.ts
-  * -o  [opens]() the current recipe file in the editor
-  * -O  [opens]() the global recipe file in the editor
+  * -o  opens the current recipe file in the editor
+  * -O  opens the global recipe file in the editor
   * -p  prints relative and absolute path to the current recipe file
   * -P  prints the absolute path to the global recipe file
   * -@  installs/updates node_modules/ c @types/bun in the folder of the current recipe file, 
          if it doesn't find it, then in the current folder
-  * -u [updates]() main.js from the internet
+  * -u  updates main.js
   * -h, --help  displays help on format command line and flags`);
 };
 

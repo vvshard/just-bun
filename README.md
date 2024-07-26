@@ -122,7 +122,7 @@ Flags:
   * `-P` prints the absolute path to the global recipe file
   * `-@` installs/updates node_modules/ c @types/bun in the folder of the current recipe file, 
         if it doesn't find it, then in the current folder
-  * `-u` [updates](#mainupdate-folder) main.js from the internet
+  * `-u` [updates](#mainupdate-folder) main.js
   * `-h`, `--help` displays help on format command line and flags
 
 ## Function runRecipe() syntax restrictions
@@ -190,7 +190,8 @@ But in newly created recipe files based on them, this path will be replaced with
 
 ##### mainupdate/ folder
 
-Used to update main.js from the Internet using the `jb -u` command. 
+Used to update main.js using `jb -u` command.
+The search paths for the "just_bun-asm" update package are specified in mainupdate\tsconfig.json.
 If you want to prevent accidental updating of main.js, then delete / rename this directory.
 
 ## Unpleasant features of Bun Shell and ways to work around them

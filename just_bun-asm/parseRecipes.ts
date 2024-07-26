@@ -14,7 +14,7 @@ export function parseRecipes(fun: Function): [aliases: string[], comments: strin
     const list: [aliases: string[], comments: string[]][] = [];
     let aliases: string[] = [];
     let comments: string[] = [];
-    const matches = sfun.slice(switchM.index + spaces.length).matchAll(re);
+    const matches = sfun.slice(switchM.index + 1).matchAll(re);
     for (const match of matches) {
         let { name, stop } = match.groups!;
         if (name) {
