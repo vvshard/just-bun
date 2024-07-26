@@ -51,8 +51,8 @@ Now, in the directory containing this just_bun.ts or in its child directory, the
   1. run | r | <default> 
   2. build_release | b 
   3. test | t # args: [filter] [-nThreads] // e.g.: -1 - in one thread
-◇ Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>
-◇: ▮
+◇ Enter: ( <number> | <name> | <alias> ) [args]. Cancel: <Space>
+> ▮
 ```
 Typing `1` or `run` or `r` or just `<Enter>` at the prompt will do: `cargo run`.    
 And, for example, typing `3 -1` or `t -1` will produce: `cargo test -- --test-threads=1`.
@@ -69,18 +69,24 @@ For example, `Just_Bun.ts` and `.JUST_BUN.ts` are valid names.
 [More information about syntax and working with **Bun Shell** - follow the link](https://bun.sh/docs/runtime/shell). 
 
 ## Installation
+If this repository suddenly becomes popular, I will create an installation package, 
+but for now you can follow the instructions below:
 
 1.  Install [Bun](https://bun.sh/) if it is not already on your system.
 2.  Copy the jb_script folder from this repository to a convenient location on your computer. 
     You can rename it, but from now on I'll call this folder `jb_script/`.
-3.  Create a short, convenient alias for your main shell's `bun <path to jb_script/>main.js` command. 
-    Here I will denote this alias `jb`.    
+3.  Create a short, convenient alias for your main shell's     
+    `bun <path to jb_script/>main.js` command. Here I will denote this alias `jb`. 
+    ___   
     *It's easy to make sure that jb_script/main.js is safe to run: it's less than 300 lines, 
-    highly readable, and imports only the "path" from bun and runRecipe() from your recipe files.*    
+    highly readable, and imports only the "path" from bun and runRecipe() from your recipe files. 
+    And [Bun does not execute arbitrary lifecycle scripts by default](https://bun.sh/docs/install/lifecycle).* 
+    ___ 
     If you have [Rust](https://www.rust-lang.org/) installed on your system, then instead of creating 
-    a shell alias, you can compile the jb executable file (jb.exe for Windows) from the bun_script_alias 
-    folder of the repository and place it in any folder from the env PATH (for example, ~/.bun/bin or in ~/.cargo/bin). 
-    The only thing it does is call `bun <path to jb>/../jb_script/main.js` with the arguments passed to it. 
+    aliases in your shells, you can compile the jb executable file (jb.exe for Windows) from 
+    the bun_script_alias folder of the repository and place it in any folder from env PATH 
+    (for example in ~/.bun/bin or in ~/.cargo/bin).    
+    The only thing it does is call `bun <path to jb>/../<jb>_script/main.js` with the arguments passed to it. 
     Then the jb_script/ folder must be placed next to the folder where you put the jb file. If desired, 
     you can synchronously rename the launcher-file and folder to a more convenient name for calling, 
     for example - in **j** (**j.exe** for Windows) and **j_script**/ respectively.
@@ -124,8 +130,8 @@ Flags:
 These restrictions are imposed solely for the correct display of the list of recipes 
 displayed using the `-l`, `-L`, `-lf` flags:
 
-The list of recipes is formed using the text the first in function, switch statement from the 
-expression recipeName: `switch (recipeName) {...}` and all restrictions apply only to this statement :
+The list of recipes is formed according to the text of the first switch instruction from recipeName:
+`switch (recipeName) {...}` and the restrictions apply only to this instruction:
 1.  All `case` expressions must be string literals without line breaks. 
     Only one `case` is allowed per entire switch statement with an *undefined* literal for the default recipe.
 2.  A chain of several `cases` before a common branch of operations is:

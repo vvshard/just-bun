@@ -127,25 +127,25 @@ export async function runFromList(runRecipe: RunRecipe, runnerPath: string) {
         return res + comments.join('\n' + ' '.repeat(Bun.stringWidth(res)));
     }).join('\n');
     msg(`List of recipes in ${rPath}):\n${listS}`);
+    msg('Enter: ( <number> | <name> | <alias> ) [args]. Cancel: <Space>');
     const listNames = list.flatMap(([aliases, comments]) => aliases);
-    msg('Enter: ( <recipe number> | <recipe name> | <alias> ) [args]. Cancel: CTRL + C | `<Enter>');
-    console.write('◇ : ');
+    console.write('> ');
     for await (const line of console) {
-        if (line === '`')
-            return msg('Reset');
+        if (line.startsWith(' ') && !line.trim())
+            return msg('Cancel');
 
         const args = line.trimStart().split(/ +/);
         let recipeName = args.shift() || '<default>';
         const n = Math.floor(Number(recipeName));
         if (!isNaN(n) && n > 0) {
             if (n > list.length) {
-                console.write('◇ Number outside the list\n◇ : ');
+                console.write('◇ Number outside the list\n> ');
                 continue;
             } else {
                 recipeName = list[n - 1][0][0];
             }
         } else if (!listNames.includes(recipeName)) {
-            console.write('◇ Wrong recipe name\n◇ : ');
+            console.write('◇ Wrong recipe name\n> ');
             continue;
         }
         if (recipeName === '<default>')
