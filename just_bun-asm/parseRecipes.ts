@@ -7,9 +7,8 @@ export function parseRecipes(fun: Function): [aliases: string[], comments: strin
     if (!switchM)
         return [];
 
-    const spaces = switchM.groups!.spaces;
-    const reStr = String.raw`\n${spaces
-        }(  case (?<name>'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|\`(?:\\\`|[^\`])*\`|void 0):|(?<stop>)\}|  .+?)`;
+    const reStr = String.raw`\n${ switchM.groups!.spaces
+        }(  case (?<name>'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|\`(?:\\\`|[^\`])*\`|void 0):|(?<stop>)\}|  .)`;
     const re = RegExp(reStr, 'g');
     const list: [aliases: string[], comments: string[]][] = [];
     let aliases: string[] = [];

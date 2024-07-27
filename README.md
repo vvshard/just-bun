@@ -130,8 +130,8 @@ Flags:
 These restrictions are imposed solely for the correct display of the list of recipes 
 displayed using the `-l`, `-L`, `-lf` flags:
 
-The list of recipes is formed according to the text of the first switch instruction from recipeName:
-`switch (recipeName) {...}` and the restrictions apply only to this instruction:
+The list of recipes is formed according to the text of the first switch statement from recipeName:
+`switch (recipeName) {...}` and the restrictions apply only to this statement:
 1.  All `case` expressions must be string literals without line breaks. 
     Only one `case` is allowed per entire switch statement with an *undefined* literal for the default recipe.
 2.  A chain of several `cases` before a common branch of operations is:
@@ -229,7 +229,7 @@ by importing `SH` into the recipe file, you can replace the call to the built-in
 #### Auto-encoding non-ASCII characters to \uXXXX of parameters and paths entered in ```$`...` ``` 
 For example, the command    
 ```await $`echo "▶ - play, ■ - stop"` ``` will output to the console:   
-`u25B6 - play, u25A0 - stop`    
+`\u25B6 - play, \u25A0 - stop`    
 ```await $`${SH}echo ...` ``` doesn't help either - it's not the command, but the interpreter
 
 **Solution:**    
