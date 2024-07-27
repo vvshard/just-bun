@@ -220,10 +220,10 @@ However, so far, not all of them fully support all flags and options of shell ut
 The best way, if necessary, to call a utility from Bun Shell rather than a built-in command is to 
 create an exported constant in funcs.ts, for example named "SH" with the absolute path to 
 the location of your sh / bash utilities (for example, on Windows, this most likely it will be:
-`export const SH = "C:/Program Files/Git/usr/bin/")`.
+`export const SH = "C:/Program Files/Git/usr/bin/")`.    
 Then, for example, if you are not satisfied with the work of the built-in command `ls`, 
-by importing `SH` into the recipe file, you can replace the call to the built-in command
-```await $`ls` ```, by calling a similar utility:
+by importing `SH` into the recipe file, you can replace the call to the built-in command    
+```await $`ls` ```, by calling a similar utility:    
 ```await $`${SH}ls` ```
 
 #### Auto-encoding non-ASCII characters to \uXXXX of parameters and paths entered in ```$`...` ``` 

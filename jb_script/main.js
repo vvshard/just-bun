@@ -12,7 +12,7 @@ function parseRecipes(fun) {
   const switchM = /\n(?<spaces> +)switch \(recipeName\) \{/.exec(sfun);
   if (!switchM)
     return [];
-  const reStr = String.raw`\n${switchM.groups.spaces}(  case (?<name>'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|\`(?:\\\`|[^\`])*\`|void 0):|(?<stop>)\}|  .)`;
+  const reStr = String.raw`\n${switchM.groups.spaces}(?:  case (?<name>'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|\`(?:\\\`|[^\`])*\`|void 0):|(?<stop>\})|  .)`;
   const re = RegExp(reStr, "g");
   const list = [];
   let aliases = [];
