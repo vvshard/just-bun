@@ -17,16 +17,16 @@
 
 ## Пример использования
 
-Рецепты хранятся в файлах just_bun.ts в рукавах `switch(recipeName)` 
-функции `export async function runRecipe(recipeName?: string, args = [])`.   
+Рецепты хранятся в файлах just_bun.ts в рукавах `switch(recipeName)` функции     
+`export async function runRecipe(recipeName?: string, args = [])`.   
 Пример файла just_bun.ts:
 ```ts
 import { $ } from "bun";
 
 export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {
-        case 'run': // recipeName
-        case 'r':   // recipeName alias
+        case 'run':     // recipeName
+        case 'r':       // recipeName alias
         case undefined: // default: for run without recipeName
             await $`cargo run`;
             break;
@@ -69,8 +69,6 @@ export async function runRecipe(recipeName?: string, args = []) {
 [Подробнее о ситнтаксисе и работе с **Bun Shell** - по ссылке](https://bun.sh/docs/runtime/shell). 
 
 ## Установка
-Если вдруг этот репозитарий станет популярным - создам установочный пакет, 
-а пока можно следовать инструкциям ниже:
 
 1.  Установите [Bun](https://bun.sh/), если его ещё нет в вашей системе.
 2.  Выполните в терминале в каталоге ~/.bun/ в bash:
@@ -86,7 +84,7 @@ export async function runRecipe(recipeName?: string, args = []) {
     Это создаст папку jb_script c скриптом запуска main.js, подпапкой пользовательских настроек settings 
     и установленным в node_modules just-bun.  
 3.  Создайте короткий удобный alias для команды    
-    `bun <path to jb_script/>/main.js`
+    `bun <absolute path to jb_script>/main.js`
     в вашей основной оболочке. Здесь этот alias я буду обозначать `jb`.
     ___    
     Если в вашей системе установлен [Rust](https://www.rust-lang.org/), то вместо создания alias'ов в ваших оболочках, 
@@ -114,7 +112,7 @@ export async function runRecipe(recipeName?: string, args = []) {
   * `jb <flag>`
 
 Флаги:
-  * `-g` запускает рецепт из глобального файла рецептов, находяшегося в папке с main.js    
+  * `-g` запускает рецепт из глобального файла рецептов, находяшегося в папке settings. 
         Без флага -g файл рецепта ищется в текущем каталоге и вверх по цепочке родительских каталогов 
   * `-f` запускает рецепт из любого ts-файла, указанного в \<path/to/recipe/file>
   * `-t` создает в текущей папке новый файл рецептов на основе шаблона, 

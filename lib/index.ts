@@ -76,7 +76,7 @@ export async function start(args: string[]) {
 function printHelp() {
     optFn.msg(`$ bun run "${Bun.main}": script - recipe launcher "just-bun"
 
-Command Line Format variants (jb - alias for "bun <path>/${path.basename(Bun.main)}"):   
+Command Line Format variants (jb - alias for "bun <path>/main.js"):   
   * jb [-g] [<recipeName> [args]]   # main use
   * jb -f <path/to/recipe/file>.ts [<recipeName> [args]]
   * jb -t [<templateSearchLine>]
@@ -84,7 +84,7 @@ Command Line Format variants (jb - alias for "bun <path>/${path.basename(Bun.mai
   * jb <flag>
 
 Flags:
-  * -g  runs a recipe from the global recipe file located in the main.js folder. Without the -g flag, 
+  * -g  runs a recipe from the global recipe file located in the settings folder. Without the -g flag, 
          the recipe file is searched in the current directory and up the chain of parent directories
   * -f  runs a recipe from any .ts-file specified in \<path/to/recipe/file>
   * -t  creates a new recipe file in the current folder based on the template 

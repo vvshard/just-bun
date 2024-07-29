@@ -17,16 +17,16 @@ logic written in TypeScript with powerful Bun-API tools, including almost the en
 
 ## Usage example
 
-Recipes are stored in just_bun.ts files in the arms of the `switch(recipeName)` 
-of function `export async function runRecipe(recipeName?: string, args = [])`.    
+Recipes are stored in just_bun.ts files in the arms of the `switch(recipeName)` of function     
+`export async function runRecipe(recipeName?: string, args = [])`.    
 Example just_bun.ts file:
 ```ts
 import { $ } from "bun";
 
 export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {
-        case 'run': // recipeName
-        case 'r':   // recipeName alias
+        case 'run':     // recipeName
+        case 'r':       // recipeName alias
         case undefined: // default: for run without recipeName
             await $`cargo run`;
             break;
@@ -69,8 +69,6 @@ For example, `Just_Bun.ts` and `.JUST_BUN.ts` are valid names.
 [More information about syntax and working with **Bun Shell** - follow the link](https://bun.sh/docs/runtime/shell). 
 
 ## Installation
-If this repository suddenly becomes popular, I will create an installation package, 
-but for now you can follow the instructions below:
 
 1.  Install [Bun](https://bun.sh/) if it is not already on your system.
 2.  Run in terminal in ~/.bun/ directory in bash:
@@ -86,7 +84,7 @@ but for now you can follow the instructions below:
     This will create a jb_script folder with the main.js startup script, a settings subfolder for user settings, 
     and install just-bun in node_modules.
 3.  Create a short, convenient alias for your main shell's     
-    `bun <path to jb_script/>/main.js` command. Here I will denote this alias `jb`. 
+    `bun <absolute path to jb_script>/main.js` command. Here I will denote this alias `jb`. 
     ___   
     If you have [Rust](https://www.rust-lang.org/) installed on your system, instead of creating aliases 
     in your shells, you can compile the jb executable (jb.exe for Windows) from the bun_script_alias folder 
@@ -113,7 +111,7 @@ Command Line Format variants:
   * `jb <flag>`
 
 Flags:
-  * `-g` runs a recipe from the global recipe file located in the main.js folder. Without the -g flag,
+  * `-g` runs a recipe from the global recipe file located in the settings folder. Without the -g flag,
         the recipe file is searched in the current directory and up the chain of parent directories
   * `-f` runs a recipe from any .ts-file specified in \<path/to/recipe/file>
   * `-t` creates a new recipe file in the current folder based on the template 

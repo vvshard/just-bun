@@ -11,6 +11,8 @@
     "just",
     "bun"
   ],
+  "author": "Vladimir Shardinov <vvshard@gmail.com>",
+  "repository": "github:vvshard/just-bun",
   "homepage": "https://github.com/vvshard/just-bun",
   "bugs": "https://github.com/vvshard/just-bun/issues",
   "license": "MIT",

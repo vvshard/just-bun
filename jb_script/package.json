@@ -1,9 +1,0 @@
-{
-  "type": "module",
-  "dependencies": {
-    "just-bun": "latest"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  }
-}
