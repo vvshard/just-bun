@@ -8,14 +8,14 @@ export type RunRecipe = (recipeName?: string, args?: string[]) => any
 export const msg = (message: string) => console.log('◇ ' + message.replaceAll('\n', '\n  '));
 /** Prints message to the console with the appropriate label */
 export const err = (message: string) => console.log('◆ ' + message.replaceAll('\n', '\n  '));
-const mainDir = path.dirname(Bun.main);
-export const globalJB = mainDir + '/just_bun.ts';
+const settingsDir = path.join(path.dirname(Bun.main), 'settings');
+export const globalJB = path.join(settingsDir, 'just_bun.ts');
 
 
 const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
 const jbGlob = new Glob(jbPattern + '.ts');
 const gitignoreGlob = new Glob('.gitignore');
-let fileSettings = Bun.file(mainDir + '/settings.json');
+let fileSettings = Bun.file(path.join(settingsDir, 'settings.json'));
 const settings = !fileSettings.size ? undefined : await fileSettings.json();
 
 export function findPath(glob = jbGlob): string | undefined {
@@ -66,14 +66,10 @@ export async function installTypes() {
     }
 }
 
-export async function mainupdate() {
-    const mainTs = mainDir + "/mainupdate/main.ts";
-    if (Bun.file(mainTs).size === 0)
-        return err('Not found ' + mainTs);
-    await $`
-bun i
-bun build ./main.ts --outdir ../ --target bun
-`.cwd(mainDir + "/mainupdate");
+export async function jbUpdate() {
+    if (!settings?.notUpdate) {
+        await $`bun update`.cwd(path.dirname(settingsDir));
+    }
 }
 
 export async function jbFromTemplate(tmplName = '_') {
@@ -83,14 +79,15 @@ export async function jbFromTemplate(tmplName = '_') {
         openInEditor(rcpFile);
     } else {
         const glob = new Glob(`templates-${jbPattern}/${tmplName}*.ts`);
-        const tmpltPath = glob.scanSync({ cwd: mainDir, dot: true, absolute: true }).next().value;
+        const tmpltPath = glob.scanSync({ cwd: settingsDir, dot: true, absolute: true }).next().value;
         if (!tmpltPath)
             return err(`The template file matching the pattern "${tmplName}*.ts" was not found.`);
 
         msg(`Template found: ${tmpltPath}`);
         let text = await Bun.file(`${tmpltPath}`).text();
+
         text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g,
-            JSON.stringify(mainDir + '/funcs.ts') + ';');
+            JSON.stringify(path.join(settingsDir, 'funcs.ts')) + ';');
         const jbName = path.basename(path.dirname(tmpltPath)).slice(10) + '.ts';
         await Bun.write(jbName, text);
 
@@ -105,7 +102,8 @@ export async function openInEditor(file?: string) {
         .replace('%file%', `"${file}"`);
     if (settings?.editor?.fileOpenReport) {
         msg(openCommand !== 'none' ? '$ ' + openCommand
-            : `File opening disabled in ${mainDir}/settings.json:\n "editor"/"fileOpen": "none"`
+            : `File opening disabled in ${path.join(settingsDir, 'settings.json')}:
+ "editor"/"fileOpen": "none"`
         );
     }
     if (openCommand === 'none')

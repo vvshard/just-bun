@@ -1,3 +1,3 @@
-import { start } from "just_bun-asm";
+import { start } from "just-bun";
 
 await start(process.argv.slice(2));

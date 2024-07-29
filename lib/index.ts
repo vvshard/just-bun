@@ -18,7 +18,7 @@ export async function start(args: string[]) {
         case '-@':
             return optFn.installTypes();
         case '-u':
-            return optFn.mainupdate();
+            return optFn.jbUpdate();
         case '-P':
             return optFn.msg(`Path to global recipe file: ${optFn.globalJB}`);
         case '-p':
@@ -99,7 +99,7 @@ Flags:
   * -P  prints the absolute path to the global recipe file
   * -@  installs/updates node_modules/ c @types/bun in the folder of the current recipe file, 
          if it doesn't find it, then in the current folder
-  * -u  updates main.js
+  * -u  update to latest version
   * -h, --help  displays help on format command line and flags`);
 }
 

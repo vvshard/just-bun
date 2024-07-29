@@ -1,4 +1,5 @@
 {
+  "notUpdate": false,
   "editor": {
     "fileOpen": "code --goto %file%",
     "fileOpenReport": false

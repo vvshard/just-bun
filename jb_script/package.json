@@ -1,6 +1,9 @@
 {
   "type": "module",
   "dependencies": {
-    "just_bun-asm": "latest"
+    "just-bun": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
   }
 }

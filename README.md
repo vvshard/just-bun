@@ -11,7 +11,7 @@ logic written in TypeScript with powerful Bun-API tools, including almost the en
 * [Installation](#installation)
 * [Command line format and flags](#command-line-format-and-flags)
 * [Function runRecipe() syntax restrictions](#function-runrecipe-syntax-restrictions)
-* [Contents of the jb_script/ folder](#contents-of-the-jb_script-folder)
+* [Contents of the jb_script/settings folder](#contents-of-the-jb_scriptsettings-folder)
 * [Unpleasant features of Bun Shell and ways to work around them](#unpleasant-features-of-bun-shell-and-ways-to-work-around-them)
 
 
@@ -73,23 +73,29 @@ If this repository suddenly becomes popular, I will create an installation packa
 but for now you can follow the instructions below:
 
 1.  Install [Bun](https://bun.sh/) if it is not already on your system.
-2.  Copy the jb_script folder from this repository to a convenient location on your computer. 
-    You can rename it, but from now on I'll call this folder `jb_script/`.
+2.  Run in terminal in ~/.bun/ directory in bash:
+    ```bash
+    $ mkdir jb_script; cd jb_script; bun i just-bun
+    $ mv -f -t ./ ./node_modules/just-bun/jb_script/**
+    ```
+    or in PowerShell:
+    ```powershell
+    PS> mkdir jb_script; cd jb_script; bun i just-bun
+    PS> mv -force ./node_modules/just-bun/jb_script/** ./
+    ```
+    This will create a jb_script folder with the main.js startup script, a settings subfolder for user settings, 
+    and install just-bun in node_modules.
 3.  Create a short, convenient alias for your main shell's     
-    `bun <path to jb_script/>main.js` command. Here I will denote this alias `jb`. 
+    `bun <path to jb_script/>/main.js` command. Here I will denote this alias `jb`. 
     ___   
-    *It's easy to make sure that jb_script/main.js is safe to run: it's less than 300 lines, 
-    highly readable, and imports only the "path" from bun and runRecipe() from your recipe files. 
-    And [Bun does not execute arbitrary lifecycle scripts by default](https://bun.sh/docs/install/lifecycle).* 
-    ___ 
-    If you have [Rust](https://www.rust-lang.org/) installed on your system, then instead of creating 
-    aliases in your shells, you can compile the jb executable file (jb.exe for Windows) from 
-    the bun_script_alias folder of the repository and place it in any folder from env PATH 
-    (for example in ~/.bun/bin or in ~/.cargo/bin).    
-    The only thing it does is call `bun <path to jb>/../<jb>_script/main.js` with the arguments passed to it. 
-    Then the jb_script/ folder must be placed next to the folder where you put the jb file. If desired, 
-    you can synchronously rename the launcher-file and folder to a more convenient name for calling, 
+    If you have [Rust](https://www.rust-lang.org/) installed on your system, instead of creating aliases 
+    in your shells, you can compile the jb executable (jb.exe for Windows) from the bun_script_alias folder 
+    of the [repository](https://github.com/vvshard/just-bun) and place it in the ~/.bun/bin/ folder. 
+    The only thing it does is call     
+    `bun ~/.bun/jb_script/main.js` with the arguments passed to it.    
+    If desired, you can synchronously rename the runner file and the folder to a more convenient name for calling, 
     for example - in **j** (**j.exe** for Windows) and **j_script**/ respectively.
+    ___ 
 4.  At this point everything works, but your code editor requires @types/bun declarations for 
     autocompletion and type checking from the Bun-API when editing recipe files.   
     To do this, go to in the terminal in the root directory of the projects in which you will use 
@@ -122,7 +128,7 @@ Flags:
   * `-P` prints the absolute path to the global recipe file
   * `-@` installs/updates node_modules/ with @types/bun in the folder of the current recipe file, 
         if it doesn't find it, then in the current folder
-  * `-u` [updates](#mainupdate-folder) main.js
+  * `-u` update just-bun to latest version
   * `-h`, `--help` displays help on format command line and flags
 
 ## Function runRecipe() syntax restrictions
@@ -146,36 +152,33 @@ The list of recipes is formed according to the text of the first switch statemen
     A `case` with the value `undefined` is listed as `<default>` and can be either 
     an alias or the first or only `case` in the chain.
 
-## Contents of the jb_script/ folder
+## Contents of the jb_script/settings/ folder
 
-##### main.js
-
-main.js is the only file needed to serve recipe files.    
-Manually editing the main.js file is not a conventional action.
-
-##### just_bun.ts
+#### just_bun.ts
 
 This is a global recipe file, called from any working directory with the `-g`, `-L`, `-O`, `-P` flags.   
 Used for custom recipes common to all projects. Unlike current recipe files, 
 its name must be strictly "just_bun.ts": without a dot at the beginning of the name and in lower case.
 
-##### settings.json
+#### settings.json
 
-This is an optional file for customizing how main.js works.   
-For now, only the "editor" section with parameters is used:
-* fileOpen - command line for opening a file in the editor (by default for VS Code: "code --goto %file%").
-If you want to generally prohibit the opening of files using the `-o`, `-O` flags and those newly 
-created from templates using the `-t` flag,
-The value of this parameter should be set to "none".
-* fileOpenReport - whether it is necessary to announce in the console about the transmitted command to open a file or about prohibiting fileOpen = "none" (default - false).
+This is an optional file of user settings that differ from the default values:
+* **notUpdate** - false by default: disables updating on accidental input of the `-u` flag
+* **editor** section:
+    * **fileOpen** - command line for opening a file in the editor (by default - for VS Code: "code --goto %file%").   
+    If you want to generally prohibit the opening of files using the `-o`, `-O` flags and those newly 
+    created from templates using the `-t` flag,
+    The value of this parameter should be set to "none".
+    * **fileOpenReport** - whether it is necessary to announce in the console about the transmitted 
+    command to open a file or about prohibiting fileOpen = "none" (default - false).
 
-##### funcs.ts
+#### funcs.ts
 
 This is a module containing exportable user constants and functions used in any recipe files.
 The exported functions initially written in it are used in the starting templates of recipe files 
 from the templates-just_bun/ folder.
 
-##### templates-just_bun/ folder
+#### templates-just_bun/ folder
 
 Contains custom recipe file templates. They will be called by the first characters of the name 
 with the command `jb -t [<templateSearchLine>]`. If the <templateSearchLine> argument is not passed, 
@@ -187,12 +190,6 @@ the required one (for example, to create .JUST_BUN.ts files, the directory name 
 
 For portability, templates import funcs.ts at a relative path. 
 But in newly created recipe files based on them, this path will be replaced with the actual absolute one.
-
-##### mainupdate/ folder
-
-Used to update main.js using `jb -u` command.
-The search paths for the "just_bun-asm" update package are specified in mainupdate\tsconfig.json.
-If you want to prevent accidental updating of main.js, then delete / rename this directory.
 
 ## Unpleasant features of Bun Shell and ways to work around them
 

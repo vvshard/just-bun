@@ -2,7 +2,9 @@
 // BunSell: https://bun.sh/docs/runtime/shell
 
 import { $ } from "bun";
-import { p$, msg, err } from "C:\\Users\\vvsh\\.bun\\j_script/funcs.ts";
+import { p$, msg, err } from "C:\\Users\\vvsh\\.bun\\j_script\\settings\\funcs.ts";
+
+//----//////----//////----//////----//////----//////----//////----//////
 
 export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {

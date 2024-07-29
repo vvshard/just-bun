@@ -1,13 +1,23 @@
 {
-  "name": "just_bun-asm",
-  "version": "0.1.0",
-  "main": "index.ts",
-  "module": "index.ts",
+  "name": "just-bun",
+  "version": "1.0.0",
+  "main": "./lib/index.ts",
+  "module": "./lib/index.ts",
   "type": "module",
-  "devDependencies": {
+  "description": "Allows you to use Bun Shell to save and run project-specific commands",
+  "keywords": [
+    "launcher",
+    "runner",
+    "just",
+    "bun"
+  ],
+  "homepage": "https://github.com/vvshard/just-bun",
+  "bugs": "https://github.com/vvshard/just-bun/issues",
+  "license": "MIT",
+  "dependencies": {
     "@types/bun": "latest"
   },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+  "engines": {
+    "bun": "^1.1.19"
   }
 }
