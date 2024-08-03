@@ -11,7 +11,6 @@ export const err = (message: string) => console.log('◆ ' + message.replaceAll(
 const settingsDir = path.join(path.dirname(Bun.main), 'settings');
 export const globalJB = path.join(settingsDir, 'just_bun.ts');
 
-
 const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
 const jbGlob = new Glob(jbPattern + '.ts');
 const gitignoreGlob = new Glob('.gitignore');
@@ -83,15 +82,31 @@ export async function jbFromTemplate(tmplName = '_') {
         if (!tmpltPath)
             return err(`The template file matching the pattern "${tmplName}*.ts" was not found.`);
 
-        msg(`Template found: ${tmpltPath}`);
-        let text = await Bun.file(`${tmpltPath}`).text();
-
-        text = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g,
-            JSON.stringify(path.join(settingsDir, 'funcs.ts')) + ';');
+        msg(`Template found: ${path.basename(tmpltPath)}`);
         const jbName = path.basename(path.dirname(tmpltPath)).slice(10) + '.ts';
-        await Bun.write(jbName, text);
+        await Bun.write(jbName, Bun.file(`${tmpltPath}`));
+        await checkImportFuncs();
 
         await openInEditor(jbName);
+    }
+}
+
+export async function checkImportFuncs(report?: boolean) {
+    let jbPath = findPath();
+    if (!jbPath)
+        return err('Not found ↑ recipe file');
+
+    const file = Bun.file(`${jbPath}`);
+    const text = await file.text();
+    const text2 = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g,
+        JSON.stringify(path.join(settingsDir, 'funcs.ts')) + ';');
+    let message = 'no corrections required';
+    if (text2 !== text) {
+        await Bun.write(file, text2);
+        message = 'funcs.ts import fixed';
+    }
+    if (report) {
+        msg(`${path.relative(process.cwd(), jbPath)}: ${message}`);
     }
 }
 
@@ -108,6 +123,7 @@ export async function openInEditor(file?: string) {
     }
     if (openCommand === 'none')
         return;
+    
     const { stderr, exitCode } = await $`${{ raw: openCommand }}`.nothrow();
     if (exitCode !== 0) {
         err(`Error opening recipe file:\n${stderr}`);
@@ -152,3 +168,4 @@ export async function runFromList(runRecipe: RunRecipe, runnerPath: string) {
         return await runRecipe(recipeName, args);
     }
 }
+

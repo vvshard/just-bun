@@ -126,6 +126,7 @@ Flags:
   * `-P` prints the absolute path to the global recipe file
   * `-@` installs/updates node_modules/ with @types/bun in the folder of the current recipe file, 
         if it doesn't find it, then in the current folder
+  * `-i` checks and corrects the absolute import path to funcs.ts in the current recipes file
   * `-u` update just-bun to latest version
   * `-h`, `--help` displays help on format command line and flags
 
