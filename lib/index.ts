@@ -4,8 +4,6 @@ import * as optFn from "./optionsFuncs";
 export async function start(args: string[]) {
     if (!globalThis.Bun)
         return console.log('This script should be run in a Bun: https://bun.sh');
-    if (Bun.version.split('.').reduce((a, n) => a * 1000 + +n, 0) < 1_001_019)
-        return optFn.err('Version Bun must be at least 1.1.19 Run bun upgrade');
     
     let displayList = false;
     let runnerPath: string | undefined;

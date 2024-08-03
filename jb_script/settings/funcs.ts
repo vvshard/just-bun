@@ -8,7 +8,7 @@ export const msg = (message: string) => console.log('◇ ' + message.replaceAll(
 export const err = (message: string) => console.log('◆ ' + message.replaceAll('\n', '\n  '));
 
 /** Prints the interpolated command to the console before executing it in $'...' */
-export function p$(strings: TemplateStringsArray, ...expressions) {
+export function p$(strings: TemplateStringsArray, ...expressions: any[]) {
     msg(expressions.reduce((a: string, exp, i) => a + (
         typeof exp === 'string' ? /\s/.test(exp) && !'\'"'.includes(exp[0]) ? `"${exp}"` : exp
             : typeof exp === 'number' ? exp.toString()

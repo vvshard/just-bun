@@ -6,7 +6,7 @@ import { p$, msg, err } from "./funcs.ts"
 
 //----//////----//////----//////----//////----//////----//////----//////
 
-export async function runRecipe(recipeName, args = []) {
+export async function runRecipe(recipeName: string, args = []) {
     switch (recipeName) {
         case '# msg about global file just_bun.ts':
         case undefined: // default

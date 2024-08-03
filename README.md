@@ -70,7 +70,8 @@ For example, `Just_Bun.ts` and `.JUST_BUN.ts` are valid names.
 
 ## Installation
 
-1.  Install [Bun](https://bun.sh/) if it is not already on your system.
+1.  Install [Bun](https://bun.sh/) if it is not already on your system. 
+    Recommended Bun version - not lower than 1.1.21
 2.  Run in terminal in ~/.bun/ directory in bash:
     ```bash
     $ mkdir jb_script; cd jb_script; bun i just-bun
@@ -206,21 +207,6 @@ You can use a custom function in funcs.ts that decorates ```$`...` ``` appropria
 This is precisely the purpose that the ```function p$()``` originally written in funcs.ts serves, 
 which is called in the same way: ```p$`...` ```, prints an interpolation of the command 
 close to `$` and then passes the call to `$`. Examples of using `p$` can be found in the templates.
-
-#### Working with sh/bash utilities
-
-For full cross-platform compatibility, [Bun Shell implements a set of built-in commands with the names of popular shell utilities](https://bun.sh/docs/runtime/shell#builtin-commands). 
-However, so far, not all of them fully support all flags and options of shell utilities.
-
-**Solution:**   
-The best way, if necessary, to call a utility from Bun Shell rather than a built-in command is to 
-create an exported constant in funcs.ts, for example named "SH" with the absolute path to 
-the location of your sh / bash utilities. For example, on Windows, this most likely it will be:   
-`export const SH = "C:/Program Files/Git/usr/bin/";`    
-Then, for example, if you are not satisfied with the work of the built-in command `ls`, 
-by importing `SH` into the recipe file, you can replace the call to the built-in command    
-```await $`ls` ```, by calling a similar utility:    
-```await $`${SH}ls` ```
 
 #### Auto-encoding non-ASCII characters to \uXXXX of parameters and paths entered in ```$`...` ``` 
 For example, the command    
