@@ -127,7 +127,8 @@ Flags:
   * `-P` prints the absolute path to the global recipe file
   * `-@` installs/updates node_modules/ with @types/bun in the folder of the current recipe file, 
         if it doesn't find it, then in the current folder
-  * `-i` checks and corrects the absolute import path to funcs.ts in the current recipes file
+  * `-i` checks and fixes the absolute import path to funcs.ts in the current recipe file 
+        and in all recipe files located in the current and child directories
   * `-u` update just-bun to latest version
   * `-h`, `--help` displays help on format command line and flags
 
@@ -193,14 +194,11 @@ But in newly created recipe files based on them, this path will be replaced with
 
 ## Unpleasant features of Bun Shell and ways to work around them
 
-Some of the below is waiting to be resolved in [bun/issues](https://github.com/oven-sh/bun/issues), 
-but for now you can use the following solutions:
-
 #### ```$`...` ``` lacks the option to output an interpolated command to the console
 
-While there are a number of useful options, such as ```$`...`.cwd(<path>) ```, which sets the working 
-directory for the command etc., the main Bun Shell function does not have the option to pre-print 
-the interpolated command to the console, which is often desirable to see when starting recipes.
+[bun Issue #13129](https://github.com/oven-sh/bun/issues/13129)    
+The main Bun Shell `$` function does not have the option to pre-print the interpolated command to the console, 
+which is often desirable when running recipes.
 
 **Solution:**  
 You can use a custom function in funcs.ts that decorates ```$`...` ``` appropriately.
@@ -208,12 +206,12 @@ This is precisely the purpose that the ```function p$()``` originally written in
 which is called in the same way: ```p$`...` ```, prints an interpolation of the command 
 close to `$` and then passes the call to `$`. Examples of using `p$` can be found in the templates.
 
-#### Auto-encoding non-ASCII characters to \uXXXX of parameters and paths entered in ```$`...` ``` 
+#### Auto-encoding non-ASCII characters to \uXXXX of parameters and paths entered in ```$`...` ```
+
+[bun Issue #12225](https://github.com/oven-sh/bun/issues/12225)
 For example, the command    
 ```await $`echo "▶ - play, ■ - stop"` ``` will output to the console:   
 `\u25B6 - play, \u25A0 - stop`    
-
-```await $`${SH}echo ...` ``` doesn't help either - it's not the command, but the interpreter
 
 **Solution:**    
 Pass parameters and paths containing non-ASCII characters as variables and expressions for interpolation:    

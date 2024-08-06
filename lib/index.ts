@@ -14,7 +14,7 @@ export async function start(args: string[]) {
         case '-t':
             return optFn.jbFromTemplate(args[1]);
         case '-i':
-            return optFn.checkImportFuncs(true);
+            return optFn.checkImportFuncsAll();
         case '-@':
             return optFn.installTypes();
         case '-u':
@@ -75,6 +75,7 @@ export async function start(args: string[]) {
 
 function printHelp() {
     optFn.msg(`$ bun run "${Bun.main}": script - recipe launcher "just-bun"
+more details: https://www.npmjs.com/package/just-bun
 
 Command Line Format variants (jb - alias for "bun <path>/main.js"):   
   jb [-g] [<recipeName> [args]]   # main use
@@ -99,8 +100,9 @@ Flags:
   -P  prints the absolute path to the global recipe file
   -@  installs/updates node_modules/ c @types/bun in the folder of the current recipe file, 
        if it doesn't find it, then in the current folder
+  -i  checks and fixes the absolute import path to funcs.ts in the current recipe file 
+       and in all recipe files located in the current and child directories
   -u  update to latest version
-  -i  checks and corrects the absolute import path to funcs.ts in the current recipes file
   -h, --help  displays help on format command line and flags`);
 }
 

@@ -11,11 +11,35 @@ export const err = (message: string) => console.log('◆ ' + message.replaceAll(
 const settingsDir = path.join(path.dirname(Bun.main), 'settings');
 export const globalJB = path.join(settingsDir, 'just_bun.ts');
 
+const importFuncsPath = JSON.stringify(path.join(settingsDir, 'funcs.ts'));
 const jbPattern = '{.,}[jJ][uU][sS][tT]_[bB][uU][nN]';
 const jbGlob = new Glob(jbPattern + '.ts');
 const gitignoreGlob = new Glob('.gitignore');
-let fileSettings = Bun.file(path.join(settingsDir, 'settings.json'));
-const settings = !fileSettings.size ? undefined : await fileSettings.json();
+
+// A two-level settings structure is assumed, with no default null values.
+async function getSettings() {
+    const defaultSettings = {
+        notUpdate: false,
+        editor: {
+            fileOpen: 'code --goto %file%',
+            fileOpenReport: false
+        }
+    };
+    const settingsFile = Bun.file(path.join(settingsDir, 'settings.json'));
+    if (!settingsFile.size)
+        return defaultSettings;
+    const jsonSettings = await settingsFile.json();
+    const asObject = (a: any) => typeof a === 'object' && !Array.isArray(a) ? a : null;
+    if (!asObject(jsonSettings))
+        return defaultSettings;
+    for (const key in defaultSettings) {
+        const dfltValue = (<{ [index: string]: any }>defaultSettings)[key];
+        if (asObject(dfltValue)) {
+            jsonSettings[key] = { ...dfltValue, ...asObject(jsonSettings[key]) };
+        }
+    }
+    return <typeof defaultSettings>{ ...defaultSettings, ...jsonSettings };
+}
 
 export function findPath(glob = jbGlob): string | undefined {
     let currentPath: string;
@@ -66,7 +90,7 @@ export async function installTypes() {
 }
 
 export async function jbUpdate() {
-    if (!settings?.notUpdate) {
+    if (!(await getSettings()).notUpdate) {
         await $`bun update`.cwd(path.dirname(settingsDir));
     }
 }
@@ -85,62 +109,72 @@ export async function jbFromTemplate(tmplName = '_') {
         msg(`Template found: ${path.basename(tmpltPath)}`);
         const jbName = path.basename(path.dirname(tmpltPath)).slice(10) + '.ts';
         await Bun.write(jbName, Bun.file(`${tmpltPath}`));
-        await checkImportFuncs();
+        await checkImportFuncs(path.resolve(jbName));
 
         await openInEditor(jbName);
     }
 }
 
-export async function checkImportFuncs(report?: boolean) {
-    let jbPath = findPath();
-    if (!jbPath)
-        return err('Not found ↑ recipe file');
-
+/** Returns Promise<false> if no correction was required. */
+async function checkImportFuncs(jbPath: string): Promise<boolean> {
     const file = Bun.file(`${jbPath}`);
     const text = await file.text();
     const text2 = text.replace(/(?<=\bimport .+? from )['"].+?[\/\\]funcs\.ts['"] *;?/g,
-        JSON.stringify(path.join(settingsDir, 'funcs.ts')) + ';');
-    let message = 'no corrections required';
-    if (text2 !== text) {
-        await Bun.write(file, text2);
-        message = 'funcs.ts import fixed';
+        importFuncsPath + ';');
+    if (text2 === text)
+        return false;
+    await Bun.write(file, text2);
+    return true;
+}
+
+export async function checkImportFuncsAll() {
+    const glob = new Glob(`**/${jbPattern}.ts`);
+    const paths = [...glob.scanSync({ dot: true, absolute: true })];
+    paths.sort();
+    const jbPath = findPath();
+    if (jbPath && path.relative(process.cwd(), jbPath).startsWith('..')) {
+        paths.unshift(jbPath);
     }
-    if (report) {
-        msg(`${path.relative(process.cwd(), jbPath)}: ${message}`);
+    const corrected: string[] = [`files the import was corrected to ${importFuncsPath}:`];
+    const notRequired: string[] = ["files:"];
+    const cwd = process.cwd();
+    for (const jbPath of paths) {
+        (await checkImportFuncs(jbPath) ? corrected : notRequired).push(path.relative(cwd, jbPath));
     }
+    msg(`In ${corrected.length - 1} ${corrected.join('\n')}`);
+    msg(`No corrections were required in ${notRequired.length - 1} ${notRequired.join('\n')}`);
 }
 
 export async function openInEditor(file?: string) {
     if (!file)
         return err('Not found recipe file');
-    const openCommand: string = (settings?.editor?.fileOpen ?? 'code --goto %file%')
-        .replace('%file%', `"${file}"`);
-    if (settings?.editor?.fileOpenReport) {
+    const settings = await getSettings();
+    const openCommand: string = settings.editor.fileOpen.replace('%file%', `"${file}"`);
+    if (settings.editor.fileOpenReport) {
         msg(openCommand !== 'none' ? '$ ' + openCommand
             : `File opening disabled in ${path.join(settingsDir, 'settings.json')}:
- "editor"/"fileOpen": "none"`
-        );
+ "editor"."fileOpen": "none"`);
     }
     if (openCommand === 'none')
         return;
-    
-    const { stderr, exitCode } = await $`${{ raw: openCommand }}`.nothrow();
+
+    const { stderr, exitCode } = await $`${{ raw: openCommand }} `.nothrow();
     if (exitCode !== 0) {
-        err(`Error opening recipe file:\n${stderr}`);
+        err(`Error opening recipe file: \n${stderr} `);
     }
 }
 
 export async function runFromList(runRecipe: RunRecipe, runnerPath: string) {
     const rPath = runnerPath === globalJB ? globalJB
-        : `./${path.relative(process.cwd(), runnerPath)} (${path.resolve(runnerPath)})`;
+        : `./ ${path.relative(process.cwd(), runnerPath)} (${path.resolve(runnerPath)})`;
     const list = parseRecipes(runRecipe);
     if (!list.length)
-        return err(`No recipes found in file ${rPath}`);
+        return err(`No recipes found in file ${rPath} `);
     const listS = list.map(([aliases, comments], i) => {
         let res = `${i + 1}. ${aliases.join(' | ')} `;
         return res + comments.join('\n' + ' '.repeat(Bun.stringWidth(res)));
     }).join('\n');
-    msg(`List of recipes in ${rPath}):\n${listS}`);
+    msg(`List of recipes in ${rPath}): \n${listS} `);
     msg('Enter: ( <number> | <name> | <alias> ) [args]. Cancel: <Space>');
     const listNames = list.flatMap(([aliases, comments]) => aliases);
     console.write('> ');

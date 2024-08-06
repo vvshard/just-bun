@@ -1,6 +1,6 @@
 {
   "name": "just-bun",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "./lib/index.ts",
   "module": "./lib/index.ts",
   "type": "module",
