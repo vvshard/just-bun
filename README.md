@@ -208,7 +208,7 @@ close to `$` and then passes the call to `$`. Examples of using `p$` can be foun
 
 #### Auto-encoding non-ASCII characters to \uXXXX of parameters and paths entered in ```$`...` ```
 
-[bun Issue #12225](https://github.com/oven-sh/bun/issues/12225)
+[bun Issue #12225](https://github.com/oven-sh/bun/issues/12225)    
 For example, the command    
 ```await $`echo "▶ - play, ■ - stop"` ``` will output to the console:   
 `\u25B6 - play, \u25A0 - stop`    
