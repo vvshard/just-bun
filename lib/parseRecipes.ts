@@ -1,4 +1,4 @@
-/** Returns a list of recipes based on the text of the function */
+/** Returns a list of recipes based on the text of the fun */
 export function parseRecipes(fun: Function): [aliases: string[], comments: string[]][] {
     // in Bun toString() for function removes comments, formats spaces and indents, inserts semicolons, 
     // replaces undefined with "void 0", and escape chars non-ASCII
@@ -7,38 +7,32 @@ export function parseRecipes(fun: Function): [aliases: string[], comments: strin
     if (!switchM)
         return [];
 
-    const reStr = String.raw`\n${ switchM.groups!.spaces
+    const reStr = String.raw`\n${switchM.groups!.spaces
         }(?:  case (?<name>'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|\`(?:\\\`|[^\`])*\`|void 0):|(?<stop>\})|  .)`;
     const re = RegExp(reStr, 'g');
-    const list: [aliases: string[], comments: string[]][] = [];
-    let aliases: string[] = [];
-    let comments: string[] = [];
+    let aliases_comments: [aliases: string[], comments: string[]] = [[], []];
+    const list: typeof aliases_comments[] = [];
     const matches = sfun.slice(switchM.index + 1).matchAll(re);
     for (const match of matches) {
         let { name, stop } = match.groups!;
         if (name) {
-            switch (name[0]) {
-                case 'v':
-                    name = '<default>';
-                    break;
-                //@ts-ignore
-                case "'":
-                    name = name.replace(/\\'(?!$)/g, "'");
-                //@ts-ignore
-                case '`':
-                    name = `"${name.slice(1, -1).replaceAll('"', '\\"')}"`;
-                case '"': // deescape
-                    name = JSON.parse(name);
+            if (name === 'void 0') {
+                name = '<default>';
+            } else {
+                const q = name[0];
+                if (q !== '"') {
+                    name = `"${name.slice(1, -1).replaceAll('\\' + q, q).replaceAll('"', '\\"')}"`;
+                }
+                name = JSON.parse(name); // deescape
             }
-            (name.startsWith('#') ? comments : aliases).push(name);
+            aliases_comments[+name.startsWith('#')].push(name);
         } else {
-            if (aliases.length) {
-                list.push([aliases, comments]);
+            if (aliases_comments[0].length) {
+                list.push(aliases_comments);
             }
             if (stop)
                 return list;
-            aliases = [];
-            comments = [];
+            aliases_comments = [[], []];
         }
     }
     return list; // never?

@@ -8,7 +8,7 @@ export type RunRecipe = (recipeName?: string, args?: string[]) => any
 export const msg = (message: string) => console.log('◇ ' + message.replaceAll('\n', '\n  '));
 /** Prints message to the console with the appropriate label */
 export const err = (message: string) => console.log('◆ ' + message.replaceAll('\n', '\n  '));
-const settingsDir = path.join(path.dirname(Bun.main), 'settings');
+export const settingsDir = path.join(path.dirname(Bun.main), 'settings');
 export const globalJB = path.join(settingsDir, 'just_bun.ts');
 
 const importFuncsPath = JSON.stringify(path.join(settingsDir, 'funcs.ts'));
@@ -17,7 +17,7 @@ const jbGlob = new Glob(jbPattern + '.ts');
 const gitignoreGlob = new Glob('.gitignore');
 
 // A two-level settings structure is assumed, with no default null values.
-async function getSettings() {
+export async function getSettings(jsonSettings?: any) {
     const defaultSettings = {
         notUpdate: false,
         editor: {
@@ -25,10 +25,12 @@ async function getSettings() {
             fileOpenReport: false
         }
     };
-    const settingsFile = Bun.file(path.join(settingsDir, 'settings.json'));
-    if (!settingsFile.size)
-        return defaultSettings;
-    const jsonSettings = await settingsFile.json();
+    if (!jsonSettings) {
+        const settingsFile = Bun.file(path.join(settingsDir, 'settings.json'));
+        if (!settingsFile.size)
+            return defaultSettings;
+        jsonSettings = await settingsFile.json();
+    }
     const asObject = (a: any) => typeof a === 'object' && !Array.isArray(a) ? a : null;
     if (!asObject(jsonSettings))
         return defaultSettings;
@@ -99,7 +101,7 @@ export async function jbFromTemplate(tmplName = '_') {
     const rcpFile = jbGlob.scanSync({ dot: true }).next().value;
     if (rcpFile) {
         err(`There is already a file "${rcpFile}" in the current directory`);
-        openInEditor(rcpFile);
+        await openInEditor(rcpFile);
     } else {
         const glob = new Glob(`templates-${jbPattern}/${tmplName}*.ts`);
         const tmpltPath = glob.scanSync({ cwd: settingsDir, dot: true, absolute: true }).next().value;

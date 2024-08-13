@@ -7,8 +7,8 @@ import path from 'path';
 
 //----//////----//////----//////----//////----//////----//////----//////
 
-const main = __dirname + './src/index.js';
-const outdir = __dirname + './out';
+const main = path.join( __dirname, 'src/index.js');
+const outdir = path.join( __dirname, 'out');
 
 export async function runRecipe(recipeName?: string, args = []) {
     switch (recipeName) {
@@ -17,11 +17,14 @@ export async function runRecipe(recipeName?: string, args = []) {
         case undefined: // default
             await p$`bun ${main}`;
             break;
+        case 't':
+            await p$`bun test`.nothrow();
+            break;
         case 'build':
         case 'b':
             await p$`bun build ${main} --outdir ${outdir}`;
             break;
-        case 'buildU': 
+        case 'buildU':
         case '# build with decode \\uXXXX':
         case 'u':
             buildAndDecode_uXXXX();
@@ -42,11 +45,11 @@ export async function runRecipe(recipeName?: string, args = []) {
 async function buildAndDecode_uXXXX() {
     let ns = Bun.nanoseconds();
     const build = await Bun.build({ entrypoints: [main] });
-    let out = await build.outputs.find(o => o.kind === 'entry-point')!.text();
+    const output = build.outputs.find(o => o.kind === 'entry-point')!;
+    let out = await output.text();
     msg(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] build`);
     out = decode_uXXXX(out);
     msg(`[${((-ns + (ns = Bun.nanoseconds())) / 1000_000).toFixed()} ms] decoding`);
-    const outFile = path.join(outdir, path.basename(main));
-    await Bun.write(outFile, out);
+    await Bun.write(path.join(outdir, output.path), out);
     msg(`[${((Bun.nanoseconds() - ns) / 1000_000).toFixed()} ms] write`);
 }
